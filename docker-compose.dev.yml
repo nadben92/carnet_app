@@ -1,0 +1,15 @@
+# Développement local : rechargement à chaud et montage du code.
+# Usage : docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  app:
+    command:
+      [
+        "sh",
+        "-c",
+        "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+      ]
+    volumes:
+      - .:/app
+    environment:
+      PYTHONPATH: /app

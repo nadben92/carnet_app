@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carnet — Conseiller Style</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+            sans: ['Outfit', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            accent: '#1B4332',
+            'accent-dark': '#0d2818',
+            bottle: '#1B4332',
+            'bottle-light': '#2d6a4f',
+          },
+          borderRadius: { '4xl': '2rem' },
+          boxShadow: {
+            'glow': '0 0 40px -10px rgba(27, 67, 50, 0.2)',
+            'card': '0 4px 24px rgba(27, 67, 50, 0.08)',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { font-family: 'Outfit', system-ui, sans-serif; }
+    .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+    .typing-cursor::after { content: '|'; animation: blink 1s step-end infinite; color: #1B4332; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    select option { background: #ffffff; color: #1a1a1a; }
+  </style>
+</head>
+<body class="bg-white min-h-screen text-gray-800 antialiased">
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-bottle backdrop-blur-md border-b border-bottle/20">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <button type="button" id="logo-home" class="flex items-center gap-3 hover:opacity-90 transition-opacity cursor-pointer group">
+        <div class="w-10 h-10 rounded-sm bg-white/20 border border-white/40 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="text-xl font-display font-semibold tracking-wide text-white">Carnet</span>
+      </button>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2" id="api-status">
+          <span class="w-2 h-2 rounded-full bg-white/60 animate-pulse" id="status-dot"></span>
+          <span class="text-sm text-white/80" id="status-text">Vérification...</span>
+        </div>
+        <button type="button" id="cart-btn" class="relative p-2.5 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors" title="Panier">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+          <span id="cart-badge" class="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] px-0.5 flex items-center justify-center rounded-full bg-white text-bottle text-[10px] font-semibold leading-none hidden">0</span>
+        </button>
+        <div id="auth-section">
+          <button type="button" id="auth-btn" class="flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium">
+            <i data-lucide="user" class="w-4 h-4"></i>
+            <span id="auth-btn-text">Connexion</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Modal Auth (Connexion / Inscription) -->
+  <div id="auth-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onclick="if(event.target===this) closeAuthModal()">
+    <div class="bg-white rounded-lg border border-gray-200 shadow-card max-w-md w-full overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex justify-end p-4 pb-0">
+        <button type="button" onclick="closeAuthModal()" class="p-2 rounded-sm hover:bg-gray-100 transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div class="flex gap-2 mb-6">
+          <button type="button" id="tab-login" class="flex-1 py-2.5 rounded-sm font-medium transition-colors border border-bottle bg-bottle/10 text-bottle">Connexion</button>
+          <button type="button" id="tab-register" class="flex-1 py-2.5 rounded-sm font-medium transition-colors border border-gray-200 text-gray-500 hover:text-gray-800">Inscription</button>
+        </div>
+        <form id="auth-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Email</label>
+            <input type="email" id="auth-email" required
+              class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle focus:border-bottle bg-white text-gray-800 placeholder-gray-400"
+              placeholder="vous@exemple.com" autocomplete="email">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Mot de passe</label>
+            <input type="password" id="auth-password" required
+              class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle focus:border-bottle bg-white text-gray-800 placeholder-gray-400"
+              placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <p id="auth-hint" class="text-xs text-gray-500 hidden">Minimum 8 caractères pour l'inscription</p>
+          <p id="auth-error" class="text-sm text-red-500 hidden"></p>
+          <button type="submit" id="auth-submit" class="w-full py-3 px-4 bg-bottle hover:bg-accent-dark text-white font-medium rounded-sm transition-colors">
+            <span id="auth-submit-text">Se connecter</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Panier -->
+  <div id="cart-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onclick="if(event.target===this) closeCartModal()">
+    <div class="bg-white rounded-lg border border-gray-200 shadow-card max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center p-4 border-b border-gray-100 flex-shrink-0">
+        <h3 class="font-display font-semibold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+          <i data-lucide="shopping-bag" class="w-5 h-5 text-bottle"></i>
+          Mon panier
+        </h3>
+        <button type="button" onclick="closeCartModal()" class="p-2 rounded-sm hover:bg-gray-100 transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+        </button>
+      </div>
+      <div id="cart-modal-body" class="p-4 overflow-y-auto flex-1 min-h-0"></div>
+      <div id="cart-modal-footer" class="p-4 border-t border-gray-100 bg-gray-50 flex-shrink-0 hidden">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Sous-total</span>
+          <span id="cart-subtotal" class="font-display font-semibold text-xl text-bottle">0,00 €</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal taille + ajout panier -->
+  <div id="add-to-cart-modal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onclick="if(event.target===this) closeAddToCartModal()">
+    <div class="bg-white rounded-lg border border-gray-200 shadow-card max-w-md w-full p-6" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="font-display font-semibold text-gray-800 pr-4">Ajouter au panier</h3>
+        <button type="button" onclick="closeAddToCartModal()" class="p-2 rounded-sm hover:bg-gray-100 flex-shrink-0">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+        </button>
+      </div>
+      <p class="text-sm text-gray-600 mb-4" id="add-to-cart-subtitle"></p>
+      <div id="add-to-cart-size-wrap" class="mb-6 hidden">
+        <label for="add-to-cart-size-select" class="block text-xs font-medium text-gray-500 mb-1">Taille</label>
+        <select id="add-to-cart-size-select" class="w-full px-4 py-3 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle text-sm"></select>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeAddToCartModal()" class="flex-1 py-3 px-4 rounded-sm border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm">Annuler</button>
+        <button type="button" id="add-to-cart-confirm" class="flex-1 py-3 px-4 rounded-sm bg-bottle hover:bg-accent-dark text-white font-medium text-sm">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Profil (infos personnelles) -->
+  <div id="profile-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto" onclick="if(event.target===this) closeProfileModal()">
+    <div class="bg-white rounded-lg border border-gray-200 shadow-card max-w-md w-full max-h-[90vh] flex flex-col my-4" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
+        <h3 class="font-display font-semibold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+          <i data-lucide="user-circle" class="w-5 h-5 text-bottle"></i>
+          Mes informations personnelles
+        </h3>
+        <button type="button" onclick="closeProfileModal()" class="p-2 rounded-sm hover:bg-gray-100 transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+        </button>
+      </div>
+      <form id="profile-form" class="p-4 sm:p-6 space-y-3 overflow-y-auto flex-1 min-h-0">
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Prénom</label>
+          <input type="text" id="profile-first-name" maxlength="100"
+            class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+            placeholder="Jean">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Taille (cm)</label>
+            <input type="number" id="profile-height-cm" min="50" max="250" step="1"
+              class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+              placeholder="175">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Poids (kg)</label>
+            <input type="number" id="profile-weight-kg" min="30" max="300" step="1"
+              class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+              placeholder="70">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Taille haut</label>
+            <input type="text" id="profile-top-size" maxlength="20"
+              class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+              placeholder="M, 42, S">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Taille bas</label>
+            <input type="text" id="profile-bottom-size" maxlength="20"
+              class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+              placeholder="M, 38, 32">
+          </div>
+        </div>
+        <div class="border-t border-gray-100 pt-4">
+          <p class="text-xs font-medium text-bottle mb-3">Mesures Fit Expert (cm)</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Poitrine</label>
+              <input type="number" id="profile-chest-circ" min="50" max="200" step="0.5"
+                class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+                placeholder="90">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Taille</label>
+              <input type="number" id="profile-waist-circ" min="50" max="200" step="0.5"
+                class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+                placeholder="78">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Hanches</label>
+              <input type="number" id="profile-hip-circ" min="50" max="200" step="0.5"
+                class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+                placeholder="96">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Longueur bras</label>
+              <input type="number" id="profile-arm-length" min="40" max="100" step="0.5"
+                class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+                placeholder="62">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Entrejambe</label>
+              <input type="number" id="profile-inside-leg" min="50" max="120" step="0.5"
+                class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+                placeholder="82">
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Pointure</label>
+          <input type="number" id="profile-shoe-size" min="20" max="55" step="1"
+            class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+            placeholder="42">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Style préféré</label>
+          <textarea id="profile-style-preference" rows="2"
+            class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+            placeholder="Ex: décontracté, classique, streetwear..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Couleurs à éviter (séparées par des virgules)</label>
+          <input type="text" id="profile-disliked-colors"
+            class="w-full px-4 py-3 rounded-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-bottle bg-white text-gray-800 placeholder-gray-400"
+            placeholder="Ex: orange, jaune, violet">
+        </div>
+        <p id="profile-error" class="text-sm text-red-500 hidden"></p>
+        <button type="submit" class="w-full py-3 px-4 bg-bottle hover:bg-accent-dark text-white font-medium rounded-sm transition-colors">
+          Enregistrer
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <main class="pt-24 pb-12 px-6 max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-white to-bottle/5">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Section principale (2/3) -->
+      <div class="lg:col-span-2 space-y-8">
+        <section>
+          <h1 class="text-4xl font-display font-light text-gray-800 mb-2">Trouvez votre style</h1>
+          <p class="text-gray-600 mb-6">Décrivez ce que vous cherchez à votre conseiller style</p>
+
+          <div id="filters-section" class="flex flex-wrap gap-4 items-end mb-6">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Genre</label>
+              <select id="filter-gender" class="px-4 py-2.5 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle text-sm">
+                <option value="">Tous</option>
+                <option value="homme">Homme</option>
+                <option value="femme">Femme</option>
+                <option value="unisex">Unisexe</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Prix min (€)</label>
+              <input type="number" id="filter-price-min" min="0" step="10" placeholder="0"
+                class="w-24 px-4 py-2.5 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle text-sm placeholder-gray-400">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Prix max (€)</label>
+              <input type="number" id="filter-price-max" min="0" step="10" placeholder="500"
+                class="w-24 px-4 py-2.5 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle text-sm placeholder-gray-400">
+            </div>
+            <button type="button" id="filter-reset" class="flex items-center gap-2 px-4 py-2.5 rounded-sm border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium" title="Réinitialiser les filtres">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              Réinitialiser
+            </button>
+          </div>
+        </section>
+
+        <!-- Résultats -->
+        <section id="results-section" class="hidden">
+          <h2 id="results-title" class="text-lg font-display font-medium text-gray-800 mb-4">Résultats</h2>
+          <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <section id="empty-state" class="text-center py-20 text-gray-500">
+          <i data-lucide="shirt" class="w-20 h-20 mx-auto mb-6 text-bottle/30"></i>
+          <p>Décrivez ce que vous cherchez à votre conseiller pour découvrir des articles</p>
+        </section>
+      </div>
+
+      <!-- Section Chat (1/3) -->
+      <div class="lg:col-span-1">
+        <div class="sticky top-28">
+          <div class="bg-white rounded-lg border border-gray-200 shadow-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-bottle/5">
+              <h2 class="font-display font-semibold text-gray-800 flex items-center gap-2">
+                <i data-lucide="message-circle" class="w-5 h-5 text-bottle"></i>
+                Conseiller Style
+              </h2>
+              <p class="text-sm text-gray-600 mt-1">Conseils personnalisés basés sur notre catalogue</p>
+            </div>
+
+            <div id="chat-messages" class="h-80 overflow-y-auto p-4 space-y-4 bg-white">
+              <div class="text-center text-gray-500 text-sm py-8" id="chat-placeholder">
+                Décrivez ce que vous cherchez pour obtenir des recommandations...
+              </div>
+            </div>
+
+            <form id="chat-form" class="p-4 border-t border-gray-100">
+              <div id="voice-status" class="mb-3 hidden rounded-lg border-2 border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-gray-800">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" aria-hidden="true"></span>
+                  <span id="voice-status-text" aria-live="polite"></span>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  id="chat-input"
+                  placeholder="Ex: Je cherche une tenue pour un mariage..."
+                  class="flex-1 px-4 py-3 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle placeholder-gray-400"
+                  autocomplete="off"
+                >
+                <button type="button" id="chat-mic-btn" class="p-3 rounded-sm border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-bottle transition-colors" title="Parler">
+                  <i data-lucide="mic" class="w-5 h-5"></i>
+                </button>
+                <button
+                  type="submit"
+                  id="chat-submit"
+                  class="px-4 py-3 bg-bottle hover:bg-accent-dark text-white rounded-sm transition-colors disabled:opacity-50"
+                >
+                  <i data-lucide="send" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal détails vêtement -->
+  <div id="garment-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onclick="if(event.target===this) closeGarmentModal()">
+    <div class="bg-white rounded-lg border border-gray-200 shadow-card max-w-lg w-full max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex justify-end p-4 pb-0">
+        <button type="button" onclick="closeGarmentModal()" class="p-2 rounded-sm hover:bg-gray-100 transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+        </button>
+      </div>
+      <div id="garment-modal-content" class="p-6 pt-2 overflow-y-auto max-h-[calc(90vh-4rem)]"></div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const API_BASE = '';
+    const cartModal = document.getElementById('cart-modal');
+    const addToCartModal = document.getElementById('add-to-cart-modal');
+
+    // API Status
+    async function checkApiStatus() {
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        const data = await res.json();
+        if (data.status === 'healthy') {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          text.textContent = 'API en ligne';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+          text.textContent = 'Dégradé';
+        }
+      } catch {
+        dot.className = 'w-2 h-2 rounded-full bg-red-500';
+        text.textContent = 'Hors ligne';
+      }
+    }
+    checkApiStatus();
+    setInterval(checkApiStatus, 30000);
+
+    // Auth
+    const AUTH_TOKEN_KEY = 'mistral_shopper_token';
+    const AUTH_USER_KEY = 'mistral_shopper_user';
+
+    function getAuthHeaders() {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      return token ? { 'Authorization': `Bearer ${token}` } : {};
+    }
+
+    function apiErrorDetail(body) {
+      const d = body && body.detail;
+      if (typeof d === 'string') return d;
+      if (Array.isArray(d)) return d.map((x) => x.msg || String(x)).join(', ') || 'Erreur';
+      return 'Erreur';
+    }
+
+    function hideCartBadge() {
+      const badge = document.getElementById('cart-badge');
+      if (badge) {
+        badge.classList.add('hidden');
+        badge.textContent = '0';
+      }
+    }
+
+    function applyCartSummary(data) {
+      const badge = document.getElementById('cart-badge');
+      if (badge) {
+        const n = data.item_count || 0;
+        if (n > 0) {
+          badge.textContent = n > 99 ? '99+' : String(n);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+      const footer = document.getElementById('cart-modal-footer');
+      const subEl = document.getElementById('cart-subtotal');
+      if (footer && subEl) {
+        if ((data.items || []).length > 0 && data.subtotal != null) {
+          footer.classList.remove('hidden');
+          subEl.textContent = `${Number(data.subtotal).toFixed(2).replace('.', ',')} €`;
+        } else {
+          footer.classList.add('hidden');
+        }
+      }
+    }
+
+    async function refreshCartBadge() {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        hideCartBadge();
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/cart`, { headers: getAuthHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        applyCartSummary(data);
+      } catch {}
+    }
+
+    async function resolveGarmentId(item) {
+      if (item && item.id != null) return item.id;
+      if (!item || !item.name) return null;
+      try {
+        const res = await fetch(`${API_BASE}/search/garment?name=${encodeURIComponent(item.name)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data && data.id != null ? data.id : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function sizeGuideKeys(item) {
+      const g = item && item.size_guide;
+      if (!g || typeof g !== 'object') return [];
+      return Object.keys(g).sort();
+    }
+
+    function openAddToCartModal(item, qty) {
+      window._addCartPending = { item, qty };
+      const keys = sizeGuideKeys(item);
+      document.getElementById('add-to-cart-subtitle').textContent = `${item.name} — ${item.brand}`;
+      const wrap = document.getElementById('add-to-cart-size-wrap');
+      const select = document.getElementById('add-to-cart-size-select');
+      if (keys.length) {
+        wrap.classList.remove('hidden');
+        select.innerHTML = keys.map((k) => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+      } else {
+        wrap.classList.add('hidden');
+        select.innerHTML = '';
+      }
+      addToCartModal.classList.remove('hidden');
+      addToCartModal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      lucide.createIcons();
+    }
+
+    function closeAddToCartModal() {
+      addToCartModal.classList.add('hidden');
+      addToCartModal.classList.remove('flex');
+      window._addCartPending = null;
+      const gm = document.getElementById('garment-modal');
+      const am = document.getElementById('auth-modal');
+      const pm = document.getElementById('profile-modal');
+      if (
+        !gm.classList.contains('flex')
+        && !cartModal.classList.contains('flex')
+        && !am.classList.contains('flex')
+        && !pm.classList.contains('flex')
+      ) {
+        document.body.style.overflow = '';
+      }
+    }
+
+    async function promptAddToCart(item, qty = 1) {
+      if (!localStorage.getItem(AUTH_TOKEN_KEY)) {
+        openAuthModal();
+        return;
+      }
+      let full = { ...item };
+      const needFetch = !sizeGuideKeys(full).length && full.name;
+      if (needFetch) {
+        try {
+          const res = await fetch(`${API_BASE}/search/garment?name=${encodeURIComponent(full.name)}`);
+          if (res.ok) {
+            const d = await res.json();
+            if (d) full = { ...full, ...d };
+          }
+        } catch {}
+      }
+      openAddToCartModal(full, qty);
+    }
+
+    async function addToCartWithSize(item, qty, sizeForApi) {
+      const gid = await resolveGarmentId(item);
+      if (gid == null) {
+        alert('Impossible d’ajouter cet article au panier.');
+        return false;
+      }
+      const body = { garment_id: gid, quantity: qty, size: sizeForApi };
+      try {
+        const res = await fetch(`${API_BASE}/cart/items`, {
+          method: 'POST',
+          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(apiErrorDetail(data));
+        applyCartSummary(data);
+        if (cartModal.classList.contains('flex')) renderCartLines(data);
+        return true;
+      } catch (e) {
+        alert(e.message || 'Erreur');
+        return false;
+      }
+    }
+
+    async function confirmAddToCart() {
+      const p = window._addCartPending;
+      if (!p) return;
+      const { item, qty } = p;
+      const keys = sizeGuideKeys(item);
+      const sizeForApi = keys.length ? document.getElementById('add-to-cart-size-select').value : null;
+      const btn = document.getElementById('add-to-cart-confirm');
+      btn.disabled = true;
+      const ok = await addToCartWithSize(item, qty, sizeForApi);
+      btn.disabled = false;
+      if (ok) closeAddToCartModal();
+    }
+
+    document.getElementById('add-to-cart-confirm').addEventListener('click', confirmAddToCart);
+
+    function renderCartLines(data) {
+      const body = document.getElementById('cart-modal-body');
+      const items = data.items || [];
+      if (!items.length) {
+        body.innerHTML = '<p class="text-gray-500 text-center py-8">Votre panier est vide.</p>';
+        applyCartSummary(data);
+        return;
+      }
+      body.innerHTML = items.map((line) => `
+        <div class="flex gap-3 py-4 border-b border-gray-100 last:border-0" data-line-id="${line.line_id}">
+          <div class="w-16 h-16 rounded-sm bg-gray-50 flex-shrink-0 overflow-hidden">
+            ${line.image_url ? `<img src="${escapeHtml(line.image_url)}" alt="" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-gray-300"><i data-lucide="shirt" class="w-6 h-6"></i></div>'}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-gray-800 truncate">${escapeHtml(line.name)}</p>
+            <p class="text-xs text-gray-500">${escapeHtml(line.brand)}</p>
+            ${line.size ? `<p class="text-xs text-bottle font-medium mt-0.5">Taille : ${escapeHtml(line.size)}</p>` : ''}
+            <div class="flex items-center gap-2 mt-2 flex-wrap">
+              <button type="button" class="cart-qty-minus px-2 py-1 border border-gray-200 rounded-sm text-sm hover:bg-gray-50" data-line-id="${line.line_id}">−</button>
+              <span class="text-sm w-8 text-center cart-qty-display">${line.quantity}</span>
+              <button type="button" class="cart-qty-plus px-2 py-1 border border-gray-200 rounded-sm text-sm hover:bg-gray-50" data-line-id="${line.line_id}" data-stock="${line.stock != null ? line.stock : ''}">+</button>
+              <button type="button" class="cart-remove ml-auto text-xs text-red-600 hover:underline" data-line-id="${line.line_id}">Retirer</button>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            ${line.price != null ? `<p class="font-semibold text-bottle">${(line.price * line.quantity).toFixed(2).replace('.', ',')} €</p><p class="text-xs text-gray-500">${line.price.toFixed(2).replace('.', ',')} € / u.</p>` : ''}
+          </div>
+        </div>
+      `).join('');
+      applyCartSummary(data);
+      body.querySelectorAll('.cart-qty-minus').forEach((btn) => {
+        btn.addEventListener('click', () => patchCartQty(parseInt(btn.dataset.lineId, 10), -1));
+      });
+      body.querySelectorAll('.cart-qty-plus').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const stock = btn.dataset.stock !== '' && btn.dataset.stock != null ? parseInt(btn.dataset.stock, 10) : null;
+          patchCartQty(parseInt(btn.dataset.lineId, 10), 1, stock);
+        });
+      });
+      body.querySelectorAll('.cart-remove').forEach((btn) => {
+        btn.addEventListener('click', () => removeCartLine(parseInt(btn.dataset.lineId, 10)));
+      });
+      lucide.createIcons();
+    }
+
+    async function patchCartQty(lineId, delta, stockMax = null) {
+      const row = document.querySelector(`#cart-modal-body [data-line-id="${lineId}"]`);
+      const disp = row && row.querySelector('.cart-qty-display');
+      if (!disp) return;
+      let q = parseInt(disp.textContent, 10);
+      if (delta < 0 && q <= 1) {
+        await removeCartLine(lineId);
+        return;
+      }
+      q += delta;
+      if (stockMax != null && q > stockMax) return;
+      try {
+        const res = await fetch(`${API_BASE}/cart/items/${lineId}`, {
+          method: 'PATCH',
+          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity: q }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(apiErrorDetail(data));
+        applyCartSummary(data);
+        renderCartLines(data);
+      } catch (e) {
+        alert(e.message || 'Erreur');
+      }
+    }
+
+    async function removeCartLine(lineId) {
+      try {
+        const res = await fetch(`${API_BASE}/cart/items/${lineId}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(apiErrorDetail(data));
+        applyCartSummary(data);
+        renderCartLines(data);
+      } catch (e) {
+        alert(e.message || 'Erreur');
+      }
+    }
+
+    async function openCartModal() {
+      if (!localStorage.getItem(AUTH_TOKEN_KEY)) {
+        openAuthModal();
+        return;
+      }
+      cartModal.classList.remove('hidden');
+      cartModal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('cart-modal-body').innerHTML = '<p class="text-sm text-gray-500 text-center py-8">Chargement...</p>';
+      lucide.createIcons();
+      try {
+        const res = await fetch(`${API_BASE}/cart`, { headers: getAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(apiErrorDetail(data));
+        renderCartLines(data);
+      } catch (e) {
+        document.getElementById('cart-modal-body').innerHTML = `<p class="text-sm text-red-500 text-center py-8">${escapeHtml(e.message)}</p>`;
+        document.getElementById('cart-modal-footer').classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function closeCartModal() {
+      cartModal.classList.add('hidden');
+      cartModal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('cart-btn').addEventListener('click', openCartModal);
+
+    function setAuth(token, user) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      updateAuthUI(user);
+      refreshCartBadge();
+    }
+
+    function clearAuth() {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      updateAuthUI(null);
+      hideCartBadge();
+    }
+
+    function updateAuthUI(user) {
+      const section = document.getElementById('auth-section');
+      if (user) {
+        section.innerHTML = `
+          <div class="flex items-center gap-2">
+            <button type="button" id="auth-profile-btn" class="flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium" title="Mon profil">
+              <i data-lucide="user" class="w-4 h-4"></i>
+              <span>${escapeHtml(user.email)}</span>
+            </button>
+            <button type="button" id="auth-logout-btn" class="p-2 rounded-sm hover:bg-white/10 text-white/80 hover:text-white transition-colors" title="Déconnexion">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        document.getElementById('auth-profile-btn').onclick = openProfileModal;
+        document.getElementById('auth-logout-btn').onclick = () => { clearAuth(); closeAuthModal(); closeProfileModal(); closeCartModal(); closeAddToCartModal(); };
+      } else {
+        section.innerHTML = `
+          <button type="button" id="auth-btn" class="flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium">
+            <i data-lucide="user" class="w-4 h-4"></i>
+            <span id="auth-btn-text">Connexion</span>
+          </button>
+        `;
+        document.getElementById('auth-btn').onclick = openAuthModal;
+      }
+      lucide.createIcons();
+    }
+
+    async function checkAuth() {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        updateAuthUI(null);
+        hideCartBadge();
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const user = await res.json();
+          setAuth(token, user);
+        } else {
+          clearAuth();
+        }
+      } catch {
+        clearAuth();
+      }
+    }
+    checkAuth();
+
+    let authMode = 'login';
+    const authModal = document.getElementById('auth-modal');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const authForm = document.getElementById('auth-form');
+    const authHint = document.getElementById('auth-hint');
+    const authError = document.getElementById('auth-error');
+    const authSubmitText = document.getElementById('auth-submit-text');
+
+    function openAuthModal() {
+      authModal.classList.remove('hidden');
+      authModal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      authError.classList.add('hidden');
+      authError.textContent = '';
+      authMode = 'login';
+      switchAuthTabs();
+    }
+
+    function closeAuthModal() {
+      authModal.classList.add('hidden');
+      authModal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    function switchAuthTabs() {
+      if (authMode === 'login') {
+        tabLogin.classList.add('border-bottle', 'bg-bottle/10', 'text-bottle');
+        tabLogin.classList.remove('border-gray-200', 'text-gray-500');
+        tabRegister.classList.remove('border-bottle', 'bg-bottle/10', 'text-bottle');
+        tabRegister.classList.add('border-gray-200', 'text-gray-500');
+        authHint.classList.add('hidden');
+        authSubmitText.textContent = 'Se connecter';
+      } else {
+        tabRegister.classList.add('border-bottle', 'bg-bottle/10', 'text-bottle');
+        tabRegister.classList.remove('border-gray-200', 'text-gray-500');
+        tabLogin.classList.remove('border-bottle', 'bg-bottle/10', 'text-bottle');
+        tabLogin.classList.add('border-gray-200', 'text-gray-500');
+        authHint.classList.remove('hidden');
+        authSubmitText.textContent = "S'inscrire";
+      }
+      authError.classList.add('hidden');
+    }
+
+    tabLogin.addEventListener('click', () => { authMode = 'login'; switchAuthTabs(); });
+    tabRegister.addEventListener('click', () => { authMode = 'register'; switchAuthTabs(); });
+
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      authError.classList.add('hidden');
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      if (!email || !password) return;
+      if (authMode === 'register' && password.length < 8) {
+        authError.textContent = 'Le mot de passe doit contenir au moins 8 caractères';
+        authError.classList.remove('hidden');
+        return;
+      }
+      authSubmitText.textContent = 'Chargement...';
+      const submitBtn = document.getElementById('auth-submit');
+      submitBtn.disabled = true;
+      try {
+        const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Erreur');
+        setAuth(data.access_token, data.user);
+        closeAuthModal();
+        authForm.reset();
+      } catch (err) {
+        authError.textContent = err.message || 'Erreur';
+        authError.classList.remove('hidden');
+      }
+      authSubmitText.textContent = authMode === 'login' ? 'Se connecter' : "S'inscrire";
+      submitBtn.disabled = false;
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (authModal.classList.contains('flex')) closeAuthModal();
+        else if (profileModal.classList.contains('flex')) closeProfileModal();
+        else if (cartModal.classList.contains('flex')) closeCartModal();
+        else if (addToCartModal.classList.contains('flex')) closeAddToCartModal();
+        else closeGarmentModal();
+      }
+    });
+
+    // Profile modal (infos personnelles)
+    const profileModal = document.getElementById('profile-modal');
+    const profileForm = document.getElementById('profile-form');
+
+    function openProfileModal() {
+      profileModal.classList.remove('hidden');
+      profileModal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('profile-error').classList.add('hidden');
+      loadProfileForm();
+      lucide.createIcons();
+    }
+
+    function closeProfileModal() {
+      profileModal.classList.add('hidden');
+      profileModal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    async function loadProfileForm() {
+      try {
+        const res = await fetch(`${API_BASE}/profile`, { headers: getAuthHeaders() });
+        if (!res.ok) return;
+        const p = await res.json();
+        document.getElementById('profile-first-name').value = p.first_name || '';
+        document.getElementById('profile-height-cm').value = p.height_cm || '';
+        document.getElementById('profile-weight-kg').value = p.weight_kg || '';
+        document.getElementById('profile-top-size').value = p.top_size || '';
+        document.getElementById('profile-bottom-size').value = p.bottom_size || '';
+        document.getElementById('profile-shoe-size').value = p.shoe_size || '';
+        document.getElementById('profile-style-preference').value = p.style_preference || '';
+        document.getElementById('profile-disliked-colors').value = (p.disliked_colors || []).join(', ');
+        document.getElementById('profile-chest-circ').value = p.chest_circ ?? '';
+        document.getElementById('profile-waist-circ').value = p.waist_circ ?? '';
+        document.getElementById('profile-hip-circ').value = p.hip_circ ?? '';
+        document.getElementById('profile-arm-length').value = p.arm_length ?? '';
+        document.getElementById('profile-inside-leg').value = p.inside_leg ?? '';
+      } catch {}
+    }
+
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = profileForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      document.getElementById('profile-error').classList.add('hidden');
+      try {
+        const colorsStr = document.getElementById('profile-disliked-colors').value.trim();
+        const disliked_colors = colorsStr ? colorsStr.split(',').map(c => c.trim()).filter(Boolean) : null;
+        const body = {
+          first_name: document.getElementById('profile-first-name').value.trim() || null,
+          height_cm: document.getElementById('profile-height-cm').value ? parseInt(document.getElementById('profile-height-cm').value, 10) : null,
+          weight_kg: document.getElementById('profile-weight-kg').value ? parseInt(document.getElementById('profile-weight-kg').value, 10) : null,
+          top_size: document.getElementById('profile-top-size').value.trim() || null,
+          bottom_size: document.getElementById('profile-bottom-size').value.trim() || null,
+          shoe_size: document.getElementById('profile-shoe-size').value ? parseInt(document.getElementById('profile-shoe-size').value, 10) : null,
+          style_preference: document.getElementById('profile-style-preference').value.trim() || null,
+          disliked_colors,
+          chest_circ: document.getElementById('profile-chest-circ').value ? parseFloat(document.getElementById('profile-chest-circ').value) : null,
+          waist_circ: document.getElementById('profile-waist-circ').value ? parseFloat(document.getElementById('profile-waist-circ').value) : null,
+          hip_circ: document.getElementById('profile-hip-circ').value ? parseFloat(document.getElementById('profile-hip-circ').value) : null,
+          arm_length: document.getElementById('profile-arm-length').value ? parseFloat(document.getElementById('profile-arm-length').value) : null,
+          inside_leg: document.getElementById('profile-inside-leg').value ? parseFloat(document.getElementById('profile-inside-leg').value) : null,
+        };
+        const res = await fetch(`${API_BASE}/profile`, {
+          method: 'PATCH',
+          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail || 'Erreur');
+        closeProfileModal();
+      } catch (err) {
+        document.getElementById('profile-error').textContent = err.message || 'Erreur';
+        document.getElementById('profile-error').classList.remove('hidden');
+      }
+      submitBtn.disabled = false;
+    });
+
+    // Résultats et filtres
+    const resultsSection = document.getElementById('results-section');
+    const resultsGrid = document.getElementById('results-grid');
+    const emptyState = document.getElementById('empty-state');
+    const filterGender = document.getElementById('filter-gender');
+    const filterPriceMin = document.getElementById('filter-price-min');
+    const filterPriceMax = document.getElementById('filter-price-max');
+
+    // Vêtements proposés par le LLM ou récemment consultés (liste complète, non filtrée)
+    let allProposedGarments = [];
+    let isRecentViewMode = false;
+
+    const RECENT_GARMENTS_KEY = 'carnet_recent_garments';
+    const RECENT_MAX = 20;
+
+    function getRecentlyViewed() {
+      try {
+        const raw = localStorage.getItem(RECENT_GARMENTS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch { return []; }
+    }
+
+    function addToRecentlyViewed(item) {
+      if (!item || !item.name) return;
+      const key = (item.name || '') + '|' + (item.brand || '');
+      let list = getRecentlyViewed().filter(g => (g.name || '') + '|' + (g.brand || '') !== key);
+      list.unshift({ ...item });
+      list = list.slice(0, RECENT_MAX);
+      try { localStorage.setItem(RECENT_GARMENTS_KEY, JSON.stringify(list)); } catch {}
+    }
+
+    function getFilterValues() {
+      const gender = filterGender.value ? filterGender.value.toLowerCase() : '';
+      const priceMin = filterPriceMin.value ? parseFloat(filterPriceMin.value) : null;
+      const priceMax = filterPriceMax.value ? parseFloat(filterPriceMax.value) : null;
+      return { gender, priceMin, priceMax };
+    }
+
+    function filterGarments(items) {
+      if (!items.length) return [];
+      const { gender, priceMin, priceMax } = getFilterValues();
+      return items.filter(g => {
+        if (gender && g.gender && g.gender.toLowerCase() !== gender) return false;
+        if (priceMin != null && (g.price == null || g.price < priceMin)) return false;
+        if (priceMax != null && (g.price == null || g.price > priceMax)) return false;
+        return true;
+      });
+    }
+
+    function applyFiltersToDisplay() {
+      if (!allProposedGarments.length) return;
+      const filtered = filterGarments(allProposedGarments);
+      emptyState.classList.add('hidden');
+      resultsSection.classList.remove('hidden');
+      const titleBase = isRecentViewMode ? 'Récemment consultés' : 'Articles recommandés';
+      document.getElementById('results-title').textContent = filtered.length
+        ? `${titleBase} (${filtered.length})`
+        : 'Aucun article ne correspond aux filtres';
+      window.lastSearchItems = filtered;
+      renderResultsGrid(filtered);
+    }
+
+    function showRecentlyViewedIfAny() {
+      const recent = getRecentlyViewed();
+      if (recent.length) {
+        allProposedGarments = recent;
+        isRecentViewMode = true;
+        filterGender.value = '';
+        filterPriceMin.value = '';
+        filterPriceMax.value = '';
+        applyFiltersToDisplay();
+      } else {
+        resultsSection.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+      }
+    }
+
+    [filterGender, filterPriceMin, filterPriceMax].forEach(el => {
+      el.addEventListener('change', applyFiltersToDisplay);
+    });
+    filterPriceMin.addEventListener('input', () => applyFiltersToDisplay());
+    filterPriceMax.addEventListener('input', () => applyFiltersToDisplay());
+
+    document.getElementById('filter-reset').addEventListener('click', () => {
+      filterGender.value = '';
+      filterPriceMin.value = '';
+      filterPriceMax.value = '';
+      applyFiltersToDisplay();
+    });
+
+    document.getElementById('logo-home').addEventListener('click', () => {
+      allProposedGarments = [];
+      isRecentViewMode = false;
+      chatMessages.innerHTML = '<div class="text-center text-gray-500 text-sm py-8" id="chat-placeholder">Posez une question pour obtenir des recommandations...</div>';
+      chatInput.value = '';
+      showRecentlyViewedIfAny();
+    });
+
+    // Afficher les vêtements récemment consultés à l'arrivée sur la page
+    showRecentlyViewedIfAny();
+
+    function renderResultsGrid(items) {
+      const categoryIcons = { Formal: 'shirt', Casual: 'tshirt', Sport: 'dumbbell', Outdoor: 'mountain', Accessories: 'watch', Loungewear: 'moon' };
+      resultsGrid.innerHTML = items.length
+        ? items.map((item, idx) => `
+          <div class="fade-in garment-card cursor-pointer bg-white rounded-lg overflow-hidden border border-gray-200 hover:border-bottle hover:shadow-glow transition-all" data-idx="${idx}">
+            <div class="h-40 flex items-center justify-center bg-gray-50 relative">
+              ${item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden')">` : ''}
+              <div class="flex flex-col items-center justify-center gap-2 text-gray-400 ${item.image_url ? 'hidden absolute inset-0 bg-gray-50' : ''}">
+                <i data-lucide="${categoryIcons[item.category] || 'shirt'}" class="w-12 h-12"></i>
+                <span class="text-xs">${escapeHtml(item.category)}</span>
+              </div>
+            </div>
+            <div class="p-5">
+              <div class="flex gap-2">
+                <span class="text-xs font-medium text-bottle uppercase tracking-wider">${escapeHtml(item.category)}</span>
+                ${item.gender ? `<span class="text-xs text-gray-500">• ${escapeHtml(item.gender)}</span>` : ''}
+              </div>
+              <h3 class="font-display font-semibold text-gray-800 mt-1">${escapeHtml(item.name)}</h3>
+              <p class="text-sm text-gray-500">${escapeHtml(item.brand)}</p>
+              <p class="text-sm text-gray-600 mt-3 line-clamp-3">${escapeHtml(item.description || '')}</p>
+              <div class="flex justify-between items-center mt-3">
+                ${item.price != null ? `<span class="font-semibold text-bottle">${item.price.toFixed(2)} €</span>` : ''}
+                ${item.stock != null ? `<span class="text-xs text-gray-500">${item.stock} en stock</span>` : ''}
+              </div>
+              ${item.distance !== undefined ? `<p class="text-xs text-gray-500 mt-1">Pertinence: ${(1 - item.distance).toFixed(2)}</p>` : ''}
+              <button type="button" class="add-to-cart-btn mt-4 w-full py-2.5 text-sm font-medium rounded-sm border border-bottle text-bottle hover:bg-bottle/10 transition-colors" data-idx="${idx}">
+                Ajouter au panier
+              </button>
+            </div>
+          </div>
+        `).join('')
+        : '<p class="col-span-2 text-gray-500 text-center py-8">Aucun résultat trouvé.</p>';
+
+      lucide.createIcons();
+      document.querySelectorAll('.garment-card').forEach(card => {
+        card.addEventListener('click', () => openGarmentModal(parseInt(card.dataset.idx)));
+      });
+      document.querySelectorAll('.add-to-cart-btn').forEach((btn) => {
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const idx = parseInt(btn.dataset.idx, 10);
+          const list = window.lastSearchItems;
+          if (list && list[idx]) promptAddToCart(list[idx], 1);
+        });
+      });
+    }
+
+    // Modal détails
+    const categoryIcons = { Formal: 'shirt', Casual: 'tshirt', Sport: 'dumbbell', Outdoor: 'mountain', Accessories: 'watch', Loungewear: 'moon' };
+
+    function sizeAdviceHistoryKey(item) {
+      if (!item) return '';
+      return item.id != null ? `id:${item.id}` : `n:${item.name}|${item.brand || ''}`;
+    }
+
+    function renderSizeChatTurns(container, histKey) {
+      if (!container) return;
+      const list = (window._sizeAdviceHistories && window._sizeAdviceHistories[histKey]) || [];
+      if (!list.length) {
+        container.innerHTML = '<p class="text-sm text-gray-500">Taille, coupe, style... Indiquez votre préférence ou posez une question.</p>';
+        return;
+      }
+      container.innerHTML = '';
+      list.forEach((turn) => {
+        if (turn.role === 'user') {
+          container.insertAdjacentHTML('beforeend', `
+            <div class="flex justify-end mb-2"><span class="text-sm bg-bottle/20 text-bottle rounded-sm rounded-br-md px-3 py-2 max-w-[85%]">${escapeHtml(turn.content)}</span></div>
+          `);
+        } else if (turn.role === 'assistant') {
+          container.insertAdjacentHTML('beforeend', `
+            <div class="flex mb-2"><span class="text-sm bg-white text-gray-800 rounded-sm rounded-bl-md px-3 py-2 border border-gray-200 max-w-[85%] whitespace-pre-wrap">${escapeHtml(turn.content)}</span></div>
+          `);
+        }
+      });
+    }
+
+    async function openGarmentModal(idx) {
+      const items = window.lastSearchItems;
+      if (!items || !items[idx]) return;
+      let item = items[idx];
+      const modal = document.getElementById('garment-modal');
+      const content = document.getElementById('garment-modal-content');
+
+      // Récupérer le size_guide depuis l'API si absent (garantit les données à jour)
+      if (!item.size_guide) {
+        try {
+          const res = await fetch(`${API_BASE}/search/garment?name=${encodeURIComponent(item.name)}`);
+          if (res.ok) {
+            const full = await res.json();
+            if (full) item = { ...item, ...full };
+          }
+        } catch {}
+      }
+      addToRecentlyViewed(item);
+
+      const sizeAdviceHistKey = sizeAdviceHistoryKey(item);
+      if (!window._sizeAdviceHistories) window._sizeAdviceHistories = {};
+
+      content.innerHTML = `
+        <div class="rounded-lg overflow-hidden bg-gray-100 mb-6 h-64 flex items-center justify-center">
+          ${item.image_url
+            ? `<img src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover">`
+            : `<div class="flex flex-col items-center gap-2 text-gray-400"><i data-lucide="${categoryIcons[item.category] || 'shirt'}" class="w-16 h-16"></i><span>${escapeHtml(item.category)}</span></div>`}
+        </div>
+        <div class="flex gap-2">
+          <span class="text-xs font-medium text-bottle uppercase tracking-wider">${escapeHtml(item.category)}</span>
+          ${item.gender ? `<span class="text-xs text-gray-500">• ${escapeHtml(item.gender)}</span>` : ''}
+        </div>
+        <h2 class="text-2xl font-display font-semibold text-gray-800 mt-1">${escapeHtml(item.name)}</h2>
+        <p class="text-gray-500 mt-1">${escapeHtml(item.brand)}</p>
+        <p class="text-gray-600 mt-4 leading-relaxed">${escapeHtml(item.description)}</p>
+        <div class="flex gap-4 mt-6 pt-6 border-t border-gray-100">
+          ${item.price != null ? `<div><span class="text-xs text-gray-500">Prix</span><p class="font-semibold text-bottle text-xl">${item.price.toFixed(2)} €</p></div>` : ''}
+          ${item.stock != null ? `<div><span class="text-xs text-gray-500">Stock</span><p class="font-medium text-gray-800">${item.stock} disponibles</p></div>` : ''}
+        </div>
+        <button type="button" id="garment-add-cart" class="mt-6 w-full py-3 px-4 bg-bottle hover:bg-accent-dark text-white font-medium rounded-sm transition-colors flex items-center justify-center gap-2">
+          <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+          Ajouter au panier
+        </button>
+        <div class="mt-6 pt-6 border-t border-gray-100">
+          <h3 class="font-medium text-gray-800 flex items-center gap-2 mb-3">
+            <i data-lucide="ruler" class="w-4 h-4 text-bottle"></i>
+            Conseil taille
+          </h3>
+          ${item.size_guide ? `
+          <div id="size-chat-messages" class="min-h-[60px] max-h-32 overflow-y-auto p-3 rounded-sm bg-gray-50 border border-gray-200 mb-3 space-y-2"></div>
+          <form id="size-chat-form" class="flex flex-col gap-2">
+            <div class="flex gap-2">
+              <input type="text" id="size-chat-input" placeholder="Ex: Quelle taille ? Coupe ample ou ajustée ?"
+                class="flex-1 px-4 py-2.5 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle placeholder-gray-400 text-sm"
+                autocomplete="off">
+              <button type="button" class="size-chat-mic-btn p-2.5 rounded-sm border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-bottle transition-colors" title="Parler">
+                <i data-lucide="mic" class="w-4 h-4"></i>
+              </button>
+              <button type="submit" id="size-chat-submit" class="px-4 py-2.5 bg-bottle hover:bg-accent-dark text-white rounded-sm transition-colors">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div id="size-voice-status" class="text-xs text-gray-500 min-h-[18px] hidden"></div>
+          </form>
+          ` : `
+          <p class="text-sm text-gray-500 py-3">Guide des tailles non disponible pour ce vêtement.</p>
+          <p class="text-xs text-gray-400">Réinjectez le catalogue pour ajouter les guides de tailles.</p>
+          `}
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      lucide.createIcons();
+
+      const sizeChatMount = content.querySelector('#size-chat-messages');
+      if (sizeChatMount) renderSizeChatTurns(sizeChatMount, sizeAdviceHistKey);
+
+      const addCartBtn = content.querySelector('#garment-add-cart');
+      if (addCartBtn) {
+        addCartBtn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          promptAddToCart(item, 1);
+        });
+      }
+
+      if (item.size_guide && content.querySelector('#size-chat-form')) {
+        const sizeChatForm = content.querySelector('#size-chat-form');
+        const sizeChatInput = content.querySelector('#size-chat-input');
+        const sizeChatMessages = content.querySelector('#size-chat-messages');
+        const sizeChatSubmit = content.querySelector('#size-chat-submit');
+        const sizeChatMicBtn = content.querySelector('.size-chat-mic-btn');
+
+        if (sizeChatMicBtn && mediaRecorderSupported) {
+          const sizeVoiceStatus = content.querySelector('#size-voice-status');
+          let sizeRecorder = null;
+          sizeChatMicBtn.addEventListener('click', async () => {
+            if (sizeRecorder && sizeRecorder.state === 'recording') {
+              sizeRecorder.stop();
+              sizeRecorder = null;
+              return;
+            }
+            sizeChatMicBtn.classList.add('bg-red-100', 'text-red-600');
+            sizeRecorder = await startLiveTranscribe(sizeChatInput, sizeChatMicBtn, sizeVoiceStatus);
+            if (!sizeRecorder) sizeChatMicBtn.classList.remove('bg-red-100', 'text-red-600');
+          });
+        }
+        if (sizeChatMicBtn && !mediaRecorderSupported) sizeChatMicBtn.style.display = 'none';
+
+        sizeChatForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const msg = sizeChatInput.value.trim() || 'Quelle taille pour moi ?';
+          if (!msg) return;
+
+          sizeChatSubmit.disabled = true;
+          sizeChatMessages.querySelector('p')?.remove();
+          sizeChatMessages.insertAdjacentHTML('beforeend', `
+            <div class="flex justify-end"><span class="text-sm bg-bottle/20 text-bottle rounded-sm rounded-br-md px-3 py-2 max-w-[85%]">${escapeHtml(msg)}</span></div>
+          `);
+          sizeChatInput.value = '';
+          sizeChatMessages.insertAdjacentHTML('beforeend', `
+            <div class="flex gap-2 size-chat-loader mb-2" aria-hidden="true">
+              <span class="w-2 h-2 rounded-full bg-bottle animate-bounce"></span>
+              <span class="w-2 h-2 rounded-full bg-bottle animate-bounce" style="animation-delay: 150ms"></span>
+              <span class="w-2 h-2 rounded-full bg-bottle animate-bounce" style="animation-delay: 300ms"></span>
+            </div>
+          `);
+          sizeChatMessages.scrollTop = sizeChatMessages.scrollHeight;
+
+          const priorHistory = (window._sizeAdviceHistories && window._sizeAdviceHistories[sizeAdviceHistKey]) || [];
+
+          try {
+            const res = await fetch(`${API_BASE}/chat/size-advice`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+              body: JSON.stringify({
+                garment_name: item.name,
+                garment_id: item.id != null ? item.id : null,
+                size_guide: item.size_guide,
+                message: msg,
+                history: priorHistory,
+                description: item.description || null,
+                category: item.category || null,
+                gender: item.gender || null,
+                brand: item.brand || null,
+              }),
+            });
+            const data = await res.json().catch(() => ({}));
+            sizeChatMessages.querySelector('.size-chat-loader')?.remove();
+            if (!res.ok) throw new Error(apiErrorDetail(data));
+            if (data.cart_added) refreshCartBadge();
+            if (!window._sizeAdviceHistories[sizeAdviceHistKey]) window._sizeAdviceHistories[sizeAdviceHistKey] = [];
+            window._sizeAdviceHistories[sizeAdviceHistKey].push({ role: 'user', content: msg });
+            window._sizeAdviceHistories[sizeAdviceHistKey].push({ role: 'assistant', content: data.reply });
+            if (window._sizeAdviceHistories[sizeAdviceHistKey].length > 24) {
+              window._sizeAdviceHistories[sizeAdviceHistKey] = window._sizeAdviceHistories[sizeAdviceHistKey].slice(-24);
+            }
+            const replyEscaped = escapeHtml(data.reply);
+            sizeChatMessages.insertAdjacentHTML('beforeend', `
+              <div class="flex mb-2"><span class="text-sm bg-white text-gray-800 rounded-sm rounded-bl-md px-3 py-2 border border-gray-200 max-w-[85%] whitespace-pre-wrap">${replyEscaped}</span></div>
+            `);
+            sizeChatMessages.scrollTop = sizeChatMessages.scrollHeight;
+          } catch (err) {
+            sizeChatMessages.querySelector('.size-chat-loader')?.remove();
+            sizeChatMessages.insertAdjacentHTML('beforeend', `
+              <div class="flex"><span class="text-sm text-red-500">Erreur: ${escapeHtml(err.message)}</span></div>
+            `);
+          }
+          sizeChatSubmit.disabled = false;
+          lucide.createIcons();
+        });
+      }
+    }
+
+    function closeGarmentModal() {
+      const modal = document.getElementById('garment-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+
+    // Chat vocal : Voxtral uniquement (MediaRecorder capture l'audio, Mistral transcrit)
+    const mediaRecorderSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+
+    function showVoiceStatus(msg, isError = false) {
+      const el = document.getElementById('voice-status');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.remove('hidden', 'text-red-500');
+      if (isError) el.classList.add('text-red-500');
+      el.classList.add('block');
+    }
+
+    function hideVoiceStatus() {
+      const el = document.getElementById('voice-status');
+      if (el) { el.classList.add('hidden'); el.textContent = ''; }
+    }
+
+    async function startLiveTranscribe(inputEl, micBtn, statusEl) {
+      if (!mediaRecorderSupported) {
+        alert('L\'enregistrement audio n\'est pas supporté. Utilisez Chrome ou Edge.');
+        return null;
+      }
+      const showStatus = (msg) => {
+        if (statusEl) {
+          const textEl = statusEl.querySelector('#voice-status-text') || statusEl;
+          textEl.textContent = msg;
+          statusEl.classList.remove('hidden');
+          statusEl.classList.add('border-red-200', 'bg-red-50', 'text-gray-800');
+        } else {
+          showVoiceStatus(msg, false);
+        }
+      };
+      const hideStatus = () => {
+        if (statusEl) {
+          const textEl = statusEl.querySelector('#voice-status-text') || statusEl;
+          textEl.textContent = '';
+          statusEl.classList.add('hidden');
+        } else {
+          hideVoiceStatus();
+        }
+      };
+      try {
+        showStatus('Micro demandé...');
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const originalPlaceholder = inputEl.placeholder || '';
+        inputEl.value = '';
+        inputEl.placeholder = 'Parlez... (cliquez sur le micro pour arrêter)';
+        showStatus('🔴 Enregistrement en cours (audio envoyé à Voxtral toutes les 3 s)');
+        recorder.ondataavailable = async (e) => {
+          if (e.data.size === 0) return;
+          const blob = new Blob([e.data], { type: recorder.mimeType || 'audio/webm' });
+          if (blob.size < 1000) return;
+          showStatus(`Envoi à Voxtral... (${(blob.size / 1024).toFixed(1)} Ko)`);
+          try {
+            const formData = new FormData();
+            formData.append('file', blob, 'recording.webm');
+            const res = await fetch(`${API_BASE}/audio/transcribe`, {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: formData,
+            });
+            let data = {};
+            try {
+              data = await res.json();
+            } catch (_) {
+              return;
+            }
+            if (res.ok && data.status === 'ok') {
+              const text = (data.text || '').trim();
+              const prev = inputEl.value ? inputEl.value + ' ' : '';
+              inputEl.value = prev + text;
+            }
+          } catch (_) {}
+        };
+        recorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          micBtn.classList.remove('bg-red-100', 'text-red-600');
+          inputEl.placeholder = originalPlaceholder;
+          hideStatus();
+        };
+        recorder.start(3000);
+        return recorder;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    // Chat
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatSubmit = document.getElementById('chat-submit');
+    const chatMicBtn = document.getElementById('chat-mic-btn');
+
+    if (chatMicBtn) {
+      if (!mediaRecorderSupported) chatMicBtn.style.display = 'none';
+      let mainRecorder = null;
+      chatMicBtn.addEventListener('click', async () => {
+        if (mainRecorder && mainRecorder.state === 'recording') {
+          mainRecorder.stop();
+          mainRecorder = null;
+          return;
+        }
+        chatMicBtn.classList.add('bg-red-100', 'text-red-600');
+        mainRecorder = await startLiveTranscribe(chatInput, chatMicBtn, document.getElementById('voice-status'));
+        if (!mainRecorder) chatMicBtn.classList.remove('bg-red-100', 'text-red-600');
+      });
+    }
+
+    chatMessages.addEventListener('click', (e) => {
+      const sourceBtn = e.target.closest('.source-btn');
+      if (sourceBtn && sourceBtn.dataset.sourceIdx !== undefined && window.lastChatSources) {
+        const item = window.lastChatSources[parseInt(sourceBtn.dataset.sourceIdx)];
+        if (item) openGarmentModalDirect(item);
+      }
+    });
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      document.getElementById('chat-placeholder')?.classList.add('hidden');
+      appendMessage('user', message);
+      chatInput.value = '';
+      chatSubmit.disabled = true;
+
+      // Loader
+      const loaderId = 'loader-' + Date.now();
+      chatMessages.insertAdjacentHTML('beforeend', `
+        <div id="${loaderId}" class="flex gap-3">
+          <div class="w-8 h-8 rounded-sm border border-bottle flex items-center justify-center flex-shrink-0">
+            <i data-lucide="sparkles" class="w-4 h-4 text-bottle"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex gap-1">
+              <span class="w-2 h-2 rounded-full bg-bottle animate-bounce" style="animation-delay: 0ms"></span>
+              <span class="w-2 h-2 rounded-full bg-bottle animate-bounce" style="animation-delay: 150ms"></span>
+              <span class="w-2 h-2 rounded-full bg-bottle animate-bounce" style="animation-delay: 300ms"></span>
+            </div>
+          </div>
+        </div>
+      `);
+      lucide.createIcons();
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        // Pas de filtres envoyés à l'API : on récupère une sélection large, puis on filtre côté client
+        const res = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Erreur');
+
+        document.getElementById(loaderId).remove();
+
+        // AI message with typing effect
+        const sources = data.sources || [];
+        appendMessage('assistant', data.reply, sources, true);
+
+        // Afficher les articles recommandés (filtrage côté client)
+        if (sources.length) {
+          allProposedGarments = sources;
+          isRecentViewMode = false;
+          applyFiltersToDisplay();
+        } else {
+          allProposedGarments = [];
+          isRecentViewMode = false;
+          showRecentlyViewedIfAny();
+        }
+      } catch (err) {
+        document.getElementById(loaderId).remove();
+        appendMessage('assistant', `Erreur: ${escapeHtml(err.message)}`, [], false);
+      }
+      chatSubmit.disabled = false;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    function appendMessage(role, content, sources = [], typingEffect = false) {
+      const div = document.createElement('div');
+      div.className = `flex gap-3 ${role === 'user' ? 'flex-row-reverse' : ''} fade-in`;
+
+      const bubbleClass = role === 'user'
+        ? 'bg-bottle text-white rounded-sm rounded-br-md px-4 py-3 max-w-[85%]'
+        : 'bg-gray-50 text-gray-800 rounded-sm rounded-bl-md px-4 py-3 max-w-[85%] border border-gray-200';
+
+      let sourcesHtml = '';
+      if (sources.length) {
+        window.lastChatSources = sources;
+        sourcesHtml = `
+          <div class="mt-3 pt-3 border-t border-gray-200">
+            <p class="text-xs font-medium text-gray-500 mb-2">Articles cités :</p>
+            <div class="flex flex-wrap gap-2">
+              ${sources.map((s, i) => `
+                <button type="button" data-source-idx="${i}"
+                  class="text-xs px-3 py-1.5 rounded-sm border border-bottle text-bottle hover:bg-bottle/10 transition-colors source-btn cursor-pointer">
+                  ${escapeHtml(s.name)} — ${escapeHtml(s.brand)}${s.price != null ? ` (${s.price.toFixed(2)} €)` : ''}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      if (typingEffect) {
+        const typingId = 'typing-' + Date.now();
+        div.innerHTML = `
+          <div class="w-8 h-8 rounded-sm border border-bottle flex items-center justify-center flex-shrink-0">
+            <i data-lucide="sparkles" class="w-4 h-4 text-bottle"></i>
+          </div>
+          <div class="flex-1">
+            <div class="${bubbleClass}">
+              <span class="typing-cursor" id="${typingId}"></span>
+            </div>
+            <div class="sources-container mt-2"></div>
+          </div>
+        `;
+        chatMessages.appendChild(div);
+        lucide.createIcons();
+
+        const span = document.getElementById(typingId);
+        typeWriter(span, content, 20, () => {
+          span.classList.remove('typing-cursor');
+          const container = div.querySelector('.sources-container');
+          if (container && sourcesHtml) container.innerHTML = sourcesHtml;
+        });
+      } else {
+        div.innerHTML = `
+          ${role === 'user' ? '' : `
+            <div class="w-8 h-8 rounded-sm border border-bottle flex items-center justify-center flex-shrink-0">
+              <i data-lucide="sparkles" class="w-4 h-4 text-bottle"></i>
+            </div>
+          `}
+          <div class="flex-1">
+            <div class="${bubbleClass}">${escapeHtml(content)}</div>
+            ${sourcesHtml}
+          </div>
+        `;
+        chatMessages.appendChild(div);
+        lucide.createIcons();
+      }
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function typeWriter(el, text, speed, onComplete) {
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          el.textContent += text.charAt(i);
+          i++;
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          setTimeout(type, speed);
+        } else if (onComplete) onComplete();
+      }
+      type();
+    }
+
+    async function openGarmentModalDirect(item) {
+      if (!item || !item.name) return;
+      let fullItem = item;
+      if (!item.size_guide) {
+        try {
+          const res = await fetch(`${API_BASE}/search/garment?name=${encodeURIComponent(item.name)}`);
+          if (res.ok) {
+            const fetched = await res.json();
+            if (fetched) fullItem = { ...item, ...fetched };
+          }
+        } catch {}
+      }
+      addToRecentlyViewed(fullItem);
+      window.lastSearchItems = [fullItem];
+      openGarmentModal(0);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

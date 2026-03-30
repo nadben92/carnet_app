@@ -1,0 +1,31 @@
+# FastAPI & Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.6
+
+# Database - SQLAlchemy 2.0 Async
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.29.0
+
+# Validation & Settings
+pydantic[email]>=2.9.0
+pydantic-settings>=2.5.0
+
+# Migrations
+alembic>=1.13.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Auth (bcrypt<5 requis : passlib incompatible avec bcrypt 5.x)
+passlib[bcrypt]>=1.7.4
+bcrypt<5.0.0
+python-jose[cryptography]>=3.3.0
+
+# Mistral AI
+mistralai>=1.2.0
+
+# Recherche d'images
+duckduckgo-search>=6.0.0
+
+pgvector==0.2.5
