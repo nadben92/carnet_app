@@ -71,7 +71,6 @@
     </div>
   </nav>
 
-  <!-- Modale bienvenue : incitation forte aux mensurations (première connexion) -->
   <div id="measurements-welcome-modal" class="fixed inset-0 z-[105] hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onclick="if(event.target===this) closeMeasurementsWelcomeModal()" role="dialog" aria-labelledby="measurements-welcome-title" aria-modal="true">
     <div class="bg-white rounded-lg border-2 border-amber-200 shadow-card max-w-md w-full overflow-hidden" onclick="event.stopPropagation()">
       <div class="bg-gradient-to-br from-amber-50 to-white px-6 pt-6 pb-4 border-b border-amber-100">
@@ -80,17 +79,13 @@
         </div>
         <h2 id="measurements-welcome-title" class="text-xl font-display font-semibold text-gray-900">Personnalisez vos conseils</h2>
         <p class="text-sm text-gray-600 mt-2 leading-relaxed">
-          Sans vos <strong class="text-gray-800">mensurations</strong> (tour de poitrine, taille et hanches en cm), le conseiller ne peut pas vous recommander une taille fiable ni adapter les suggestions à votre morphologie.
+          Renseignez vos <strong class="text-gray-800">mensurations</strong> (tour de poitrine, taille et hanches en cm) : le conseiller et le conseil taille s’en servent pour des recommandations fiables.
         </p>
-        <p class="text-xs text-amber-900/80 mt-3 font-medium">Deux minutes suffisent — ouvrez votre profil et remplissez la section « Mesures Fit Expert ».</p>
+        <p class="text-xs text-amber-900/80 mt-3 font-medium">Ouvrez votre profil → section « Mesures Fit Expert » (environ 2 minutes).</p>
       </div>
       <div class="p-6 flex flex-col sm:flex-row gap-3">
-        <button type="button" id="measurements-welcome-cta" class="flex-1 py-3 px-4 bg-bottle hover:bg-accent-dark text-white font-medium rounded-sm transition-colors text-sm">
-          Renseigner mes mensurations
-        </button>
-        <button type="button" id="measurements-welcome-later" class="flex-1 py-3 px-4 rounded-sm border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm">
-          Plus tard
-        </button>
+        <button type="button" id="measurements-welcome-cta" class="flex-1 py-3 px-4 bg-bottle hover:bg-accent-dark text-white font-medium rounded-sm transition-colors text-sm">Renseigner mes mensurations</button>
+        <button type="button" id="measurements-welcome-later" class="flex-1 py-3 px-4 rounded-sm border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm">Plus tard</button>
       </div>
     </div>
   </div>
@@ -221,12 +216,12 @@
               placeholder="M, 38, 32">
           </div>
         </div>
-        <div id="profile-measures-section" class="border-t border-gray-100 pt-4 rounded-sm scroll-mt-4 ring-offset-2 transition-shadow">
+        <div id="profile-measures-section" class="border-t border-gray-100 pt-4 scroll-mt-4">
           <p class="text-xs font-medium text-bottle mb-1 flex items-center gap-2">
             <i data-lucide="ruler" class="w-3.5 h-3.5"></i>
             Mesures Fit Expert (cm)
           </p>
-          <p class="text-[11px] text-amber-800/90 bg-amber-50 border border-amber-100 rounded-sm px-2 py-1.5 mb-3">Indispensable pour le conseil taille et des recommandations sur mesure.</p>
+          <p class="text-[11px] text-amber-900/90 bg-amber-50 border border-amber-100 rounded-sm px-2 py-1.5 mb-3">Indispensable pour des conseils sur mesure (taille + style).</p>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Poitrine</label>
@@ -287,7 +282,6 @@
   </div>
 
   <main class="pt-24 pb-12 px-6 max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-white to-bottle/5">
-    <!-- Rappel visuel : profil sans mensurations complètes -->
     <div id="measurements-banner" class="hidden mb-6 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-50/80 px-4 py-3 sm:px-5 sm:py-4 shadow-sm" role="status">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex gap-3 min-w-0">
@@ -296,16 +290,12 @@
           </div>
           <div class="min-w-0">
             <p class="font-medium text-amber-950 text-sm">Complétez vos mensurations</p>
-            <p class="text-xs sm:text-sm text-amber-900/80 mt-0.5">Le conseiller style et le conseil taille s’appuient sur vos tours de poitrine, taille et hanches — sans eux, les réponses restent génériques.</p>
+            <p class="text-xs sm:text-sm text-amber-900/80 mt-0.5">Sans poitrine, taille et hanches (cm), les conseils restent génériques.</p>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <button type="button" id="measurements-banner-cta" class="px-4 py-2 rounded-sm bg-bottle hover:bg-accent-dark text-white text-sm font-medium transition-colors whitespace-nowrap">
-            Ouvrir mon profil
-          </button>
-          <button type="button" id="measurements-banner-hide-session" class="text-xs text-amber-800/70 hover:text-amber-950 underline px-2" title="Réaffiche le bandeau à la prochaine visite">
-            Masquer aujourd’hui
-          </button>
+          <button type="button" id="measurements-banner-cta" class="px-4 py-2 rounded-sm bg-bottle hover:bg-accent-dark text-white text-sm font-medium transition-colors whitespace-nowrap">Ouvrir mon profil</button>
+          <button type="button" id="measurements-banner-hide-session" class="text-xs text-amber-800/70 hover:text-amber-950 underline px-2">Masquer aujourd’hui</button>
         </div>
       </div>
     </div>
@@ -351,7 +341,7 @@
 
         <section id="empty-state" class="text-center py-20 text-gray-500">
           <i data-lucide="shirt" class="w-20 h-20 mx-auto mb-6 text-bottle/30"></i>
-          <p>Décrivez ce que vous cherchez à votre conseiller pour découvrir des articles</p>
+          <p id="empty-state-message">Écrivez au conseiller style : les articles du catalogue s’affichent ici uniquement après une réponse du conseiller.</p>
         </section>
       </div>
 
@@ -366,7 +356,7 @@
               </h2>
               <p class="text-sm text-gray-600 mt-1">Conseils personnalisés basés sur notre catalogue</p>
               <p id="chat-measurements-hint" class="hidden mt-2 text-xs text-amber-900 bg-amber-50 border border-amber-100 rounded-sm px-2.5 py-2 leading-snug">
-                <span class="font-medium">Astuce :</span> renseignez vos mensurations dans le profil pour des conseils vraiment adaptés à votre morphologie.
+                <span class="font-medium">Astuce :</span> renseignez vos mensurations dans le profil pour des conseils adaptés à votre morphologie.
               </p>
             </div>
 
@@ -383,23 +373,23 @@
                   <span id="voice-status-text" aria-live="polite"></span>
                 </div>
               </div>
-              <div class="flex gap-2">
+              <div class="flex gap-2 items-center">
                 <input
                   type="text"
                   id="chat-input"
                   placeholder="Ex: Je cherche une tenue pour un mariage..."
-                  class="flex-1 px-4 py-3 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle placeholder-gray-400"
+                  class="min-h-12 min-w-0 flex-1 px-4 py-2.5 rounded-sm border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-bottle placeholder-gray-400"
                   autocomplete="off"
                 >
-                <button type="button" id="chat-mic-btn" class="p-3 rounded-sm border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-bottle transition-colors" title="Parler">
-                  <i data-lucide="mic" class="w-5 h-5"></i>
+                <button type="button" id="chat-mic-btn" class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-bottle transition-colors" title="Parler">
+                  <i data-lucide="mic" class="w-5 h-5 shrink-0"></i>
                 </button>
                 <button
                   type="submit"
                   id="chat-submit"
-                  class="px-4 py-3 bg-bottle hover:bg-accent-dark text-white rounded-sm transition-colors disabled:opacity-50"
+                  class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-sm bg-bottle hover:bg-accent-dark text-white transition-colors disabled:opacity-50"
                 >
-                  <i data-lucide="send" class="w-5 h-5"></i>
+                  <i data-lucide="send" class="w-5 h-5 shrink-0"></i>
                 </button>
               </div>
             </form>
@@ -527,11 +517,8 @@
     function updateMeasurementsBadgeOnNav() {
       const dot = document.getElementById('profile-measurements-dot');
       if (!dot) return;
-      if (localStorage.getItem(AUTH_TOKEN_KEY) && !profileMeasurementsComplete) {
-        dot.classList.remove('hidden');
-      } else {
-        dot.classList.add('hidden');
-      }
+      if (localStorage.getItem(AUTH_TOKEN_KEY) && !profileMeasurementsComplete) dot.classList.remove('hidden');
+      else dot.classList.add('hidden');
     }
 
     function apiErrorDetail(body) {
@@ -838,8 +825,8 @@
       if (user) {
         section.innerHTML = `
           <div class="flex items-center gap-2">
-            <button type="button" id="auth-profile-btn" class="relative flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium" title="Mon profil — complétez vos mensurations si le point orange est visible">
-              <span id="profile-measurements-dot" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-bottle" aria-label="Mensurations à compléter"></span>
+            <button type="button" id="auth-profile-btn" class="relative flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium" title="Mon profil">
+              <span id="profile-measurements-dot" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-bottle" aria-hidden="true"></span>
               <i data-lucide="user" class="w-4 h-4"></i>
               <span>${escapeHtml(user.email)}</span>
             </button>
@@ -903,9 +890,7 @@
     });
     document.getElementById('measurements-banner-cta')?.addEventListener('click', () => {
       openProfileModal();
-      setTimeout(() => {
-        document.getElementById('profile-measures-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 350);
+      setTimeout(() => document.getElementById('profile-measures-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
     });
     document.getElementById('measurements-banner-hide-session')?.addEventListener('click', () => {
       sessionStorage.setItem(SS_BANNER_HIDE, '1');
@@ -1092,27 +1077,18 @@
     const filterPriceMin = document.getElementById('filter-price-min');
     const filterPriceMax = document.getElementById('filter-price-max');
 
-    // Vêtements proposés par le LLM ou récemment consultés (liste complète, non filtrée)
+    // Vêtements affichés ici = uniquement ceux renvoyés par le conseiller (POST /chat → sources)
     let allProposedGarments = [];
-    let isRecentViewMode = false;
 
-    const RECENT_GARMENTS_KEY = 'carnet_recent_garments';
-    const RECENT_MAX = 20;
+    const EMPTY_STATE_DEFAULT = 'Écrivez au conseiller style : les articles du catalogue s’affichent ici uniquement après une réponse du conseiller.';
 
-    function getRecentlyViewed() {
-      try {
-        const raw = localStorage.getItem(RECENT_GARMENTS_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch { return []; }
-    }
-
-    function addToRecentlyViewed(item) {
-      if (!item || !item.name) return;
-      const key = (item.name || '') + '|' + (item.brand || '');
-      let list = getRecentlyViewed().filter(g => (g.name || '') + '|' + (g.brand || '') !== key);
-      list.unshift({ ...item });
-      list = list.slice(0, RECENT_MAX);
-      try { localStorage.setItem(RECENT_GARMENTS_KEY, JSON.stringify(list)); } catch {}
+    function showCatalogEmptyState(message) {
+      allProposedGarments = [];
+      resultsSection.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      const msgEl = document.getElementById('empty-state-message');
+      if (msgEl) msgEl.textContent = message || EMPTY_STATE_DEFAULT;
+      lucide.createIcons();
     }
 
     function getFilterValues() {
@@ -1138,27 +1114,12 @@
       const filtered = filterGarments(allProposedGarments);
       emptyState.classList.add('hidden');
       resultsSection.classList.remove('hidden');
-      const titleBase = isRecentViewMode ? 'Récemment consultés' : 'Articles recommandés';
+      const titleBase = 'Sélection du conseiller';
       document.getElementById('results-title').textContent = filtered.length
         ? `${titleBase} (${filtered.length})`
         : 'Aucun article ne correspond aux filtres';
       window.lastSearchItems = filtered;
       renderResultsGrid(filtered);
-    }
-
-    function showRecentlyViewedIfAny() {
-      const recent = getRecentlyViewed();
-      if (recent.length) {
-        allProposedGarments = recent;
-        isRecentViewMode = true;
-        filterGender.value = '';
-        filterPriceMin.value = '';
-        filterPriceMax.value = '';
-        applyFiltersToDisplay();
-      } else {
-        resultsSection.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-      }
     }
 
     [filterGender, filterPriceMin, filterPriceMax].forEach(el => {
@@ -1175,15 +1136,12 @@
     });
 
     document.getElementById('logo-home').addEventListener('click', () => {
-      allProposedGarments = [];
-      isRecentViewMode = false;
       chatMessages.innerHTML = '<div class="text-center text-gray-500 text-sm py-8" id="chat-placeholder">Posez une question pour obtenir des recommandations...</div>';
       chatInput.value = '';
-      showRecentlyViewedIfAny();
+      showCatalogEmptyState(null);
     });
 
-    // Afficher les vêtements récemment consultés à l'arrivée sur la page
-    showRecentlyViewedIfAny();
+    showCatalogEmptyState(null);
 
     function renderResultsGrid(items) {
       const categoryIcons = { Formal: 'shirt', Casual: 'tshirt', Sport: 'dumbbell', Outdoor: 'mountain', Accessories: 'watch', Loungewear: 'moon' };
@@ -1278,8 +1236,6 @@
           }
         } catch {}
       }
-      addToRecentlyViewed(item);
-
       const sizeAdviceHistKey = sizeAdviceHistoryKey(item);
       if (!window._sizeAdviceHistories) window._sizeAdviceHistories = {};
 
@@ -1609,12 +1565,9 @@
         // Afficher les articles recommandés (filtrage côté client)
         if (sources.length) {
           allProposedGarments = sources;
-          isRecentViewMode = false;
           applyFiltersToDisplay();
         } else {
-          allProposedGarments = [];
-          isRecentViewMode = false;
-          showRecentlyViewedIfAny();
+          showCatalogEmptyState('Aucun article du catalogue ne correspond à cette requête (catalogue vide, embeddings manquants ou reformulation nécessaire).');
         }
       } catch (err) {
         document.getElementById(loaderId).remove();
@@ -1716,7 +1669,6 @@
           }
         } catch {}
       }
-      addToRecentlyViewed(fullItem);
       window.lastSearchItems = [fullItem];
       openGarmentModal(0);
     }

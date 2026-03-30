@@ -6,6 +6,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.mistral_api_errors import mistral_exception_to_user_response
 from app.core.mistral_trace import MistralCallTimeoutError, traced_mistral_call
 from app.database import get_db
 from app.models.garment import Garment
@@ -40,7 +41,7 @@ async def semantic_search(
             res = await traced_mistral_call(
                 "embeddings.create.search",
                 client.embeddings.create_async(
-                    model="mistral-embed",
+                    model=settings.mistral_embed_model,
                     inputs=[q],
                 ),
             )
@@ -51,6 +52,9 @@ async def semantic_search(
             detail="L'API Mistral (embeddings) a mis trop longtemps à répondre.",
         ) from None
     except Exception as e:
+        mapped = mistral_exception_to_user_response(e)
+        if mapped:
+            raise HTTPException(status_code=mapped[0], detail=mapped[1]) from e
         raise HTTPException(
             status_code=503,
             detail=f"Erreur API Mistral : {str(e)}",

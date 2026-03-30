@@ -27,8 +27,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY app/ ./app/
 COPY alembic.ini .
 COPY alembic/ ./alembic/
-COPY scripts/start.sh ./scripts/start.sh
-COPY scripts/seed_db.py ./scripts/seed_db.py
+COPY scripts/ ./scripts/
 
 RUN chmod +x scripts/start.sh \
     && adduser --disabled-password --gecos "" appuser \
@@ -41,4 +40,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=50s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8000/health || exit 1
 
-CMD ["sh", "scripts/start.sh"]
+CMD ["bash", "scripts/start.sh"]

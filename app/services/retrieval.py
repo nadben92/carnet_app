@@ -4,6 +4,7 @@ from mistralai.client import Mistral
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.mistral_trace import traced_mistral_call
 from app.models.garment import Garment
 
@@ -19,13 +20,14 @@ async def get_relevant_garments(
 ) -> list[dict]:
     """
     Retourne les vêtements les plus pertinents pour une requête textuelle.
-    Combine recherche sémantique (mistral-embed) avec filtres genre et prix.
+    Combine recherche sémantique (embeddings Mistral) avec filtres genre et prix.
     """
+    embed_model = get_settings().mistral_embed_model
     async with Mistral(api_key=api_key) as client:
         res = await traced_mistral_call(
             "embeddings.create.rag",
             client.embeddings.create_async(
-                model="mistral-embed",
+                model=embed_model,
                 inputs=[query],
             ),
         )

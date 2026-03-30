@@ -20,6 +20,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    command: ["bash", "scripts/start.sh"]
     networks:
       - internal
     ports:
@@ -31,8 +32,11 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
       DATABASE_NAME: ${DATABASE_NAME:-personal_shopper}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
-      MISTRAL_CHAT_MODEL: ${MISTRAL_CHAT_MODEL:-mistral-large-latest}
+      MISTRAL_CHAT_MODEL: ${MISTRAL_CHAT_MODEL:-mistral-small-latest}
+      MISTRAL_EMBED_MODEL: ${MISTRAL_EMBED_MODEL:-mistral-embed}
+      MISTRAL_TRANSCRIPTION_MODEL: ${MISTRAL_TRANSCRIPTION_MODEL:-voxtral-small-latest}
       MISTRAL_HTTP_TIMEOUT_SECONDS: ${MISTRAL_HTTP_TIMEOUT_SECONDS:-120}
+      MISTRAL_RAG_MAX_TOKENS: ${MISTRAL_RAG_MAX_TOKENS:-480}
       DATABASE_CONNECT_TIMEOUT_SECONDS: ${DATABASE_CONNECT_TIMEOUT_SECONDS:-30}
       DATABASE_COMMAND_TIMEOUT_SECONDS: ${DATABASE_COMMAND_TIMEOUT_SECONDS:-60}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-openssl-rand-hex-32}

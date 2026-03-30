@@ -14,7 +14,6 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 
 
 def _measurements_complete_row(p: UserProfile | None) -> bool:
-    """True si les trois tours (cm) sont renseignés — base du conseil taille / style."""
     if not p:
         return False
     return (
@@ -42,7 +41,7 @@ class ProfileResponse(BaseModel):
     inside_leg: float | None = None
     measurements_complete: bool = Field(
         default=False,
-        description="Poitrine, taille et hanches (cm) renseignés — conseils personnalisés fiables",
+        description="Poitrine, taille et hanches (cm) renseignés",
     )
 
 

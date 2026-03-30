@@ -1,4 +1,4 @@
-"""API d'extraction de guides de tailles depuis des images (Pixtral OCR)."""
+"""API d'extraction de guides de tailles depuis des images (vision Mistral)."""
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/size-extract", tags=["size-extract"])
 async def extract_size_guide(image: UploadFile = File(...)):
     """
     Extrait un guide de tailles structuré depuis une image de tableau de tailles.
-    Utilise Pixtral (vision) pour l'OCR.
+    Utilise le modèle vision configuré (``MISTRAL_CHAT_MODEL``, ex. mistral-small-latest).
     Retourne un JSON : {"S": {"chest": [88, 92], "waist": [76, 80], "hip": [92, 96]}, ...}
     """
     settings = get_settings()
@@ -32,6 +32,7 @@ async def extract_size_guide(image: UploadFile = File(...)):
         result = await extract_size_guide_from_image(
             image_source=data,
             api_key=settings.mistral_api_key,
+            vision_model=settings.mistral_chat_model,
         )
         return result
     except MistralCallTimeoutError:

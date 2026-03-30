@@ -25,7 +25,7 @@ python-jose[cryptography]>=3.3.0
 # Mistral AI
 mistralai>=1.2.0
 
-# Recherche d'images
+# Images catalogue (seed) — recherche avec score de pertinence
 duckduckgo-search>=6.0.0
 
 pgvector==0.2.5

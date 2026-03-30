@@ -4,14 +4,21 @@ import asyncio
 
 from mistralai.client import Mistral
 
+from app.core.config import get_settings
 from app.core.mistral_trace import traced_mistral_call
 
 
-def _transcribe_sync(audio_bytes: bytes, filename: str, api_key: str, language: str) -> str:
+def _transcribe_sync(
+    audio_bytes: bytes,
+    filename: str,
+    api_key: str,
+    language: str,
+    model: str,
+) -> str:
     """Transcription synchrone via Mistral Voxtral."""
     with Mistral(api_key=api_key) as client:
         res = client.audio.transcriptions.complete(
-            model="voxtral-mini-latest",
+            model=model,
             file={"file_name": filename, "content": audio_bytes},
             language=language,
             diarize=False,
@@ -40,6 +47,7 @@ async def transcribe_audio(
     if not api_key:
         return ""
 
+    model = get_settings().mistral_transcription_model
     return await traced_mistral_call(
         "audio.transcriptions.complete",
         asyncio.to_thread(
@@ -48,5 +56,6 @@ async def transcribe_audio(
             filename,
             api_key,
             language,
+            model,
         ),
     )

@@ -1,4 +1,4 @@
-"""Service d'extraction de guides de tailles depuis des images (Pixtral OCR)."""
+"""Service d'extraction de guides de tailles depuis des images (modèle vision Mistral)."""
 
 import base64
 import json
@@ -8,14 +8,13 @@ from typing import Any
 
 from mistralai.client import Mistral
 
+from app.core.config import get_settings
 from app.core.mistral_trace import traced_mistral_call
 
 SIZE_EXTRACTOR_PROMPT = """Convertis ce tableau de tailles en un objet JSON pur.
 Les clés sont les tailles (S, M, L ou 38, 40, etc.) et les valeurs sont les plages de mesures en cm pour la poitrine (chest), la taille (waist) et les hanches (hip).
 Format attendu : {"S": {"chest": [88, 92], "waist": [76, 80], "hip": [92, 96]}, "M": {...}}
 Utilise uniquement des nombres en cm. Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
-
-PIXTRAL_MODEL = "pixtral-12b-2409"
 
 
 def _normalize_size_guide(raw: dict[str, Any]) -> dict[str, dict[str, list[float]]]:
@@ -83,6 +82,7 @@ def _extract_json_from_text(text: str) -> dict[str, Any] | None:
 async def extract_size_guide_from_image(
     image_source: str | bytes | Path,
     api_key: str,
+    vision_model: str | None = None,
 ) -> dict[str, dict[str, list[float]]]:
     """
     Extrait un guide de tailles structuré depuis une image de tableau de tailles.
@@ -117,6 +117,8 @@ async def extract_size_guide_from_image(
     else:
         raise ValueError("image_source doit être une URL, bytes ou Path")
 
+    model = vision_model or get_settings().mistral_chat_model
+
     content: list[dict[str, Any]] = [
         {"type": "text", "text": SIZE_EXTRACTOR_PROMPT},
         {"type": "image_url", "image_url": image_url},
@@ -124,9 +126,9 @@ async def extract_size_guide_from_image(
 
     async with Mistral(api_key=api_key) as client:
         res = await traced_mistral_call(
-            "chat.complete.pixtral_size_extract",
+            "chat.complete.vision_size_extract",
             client.chat.complete_async(
-                model=PIXTRAL_MODEL,
+                model=model,
                 messages=[{"role": "user", "content": content}],
                 temperature=0.1,
             ),

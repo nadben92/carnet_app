@@ -1,5 +1,6 @@
 """Agent Fit Advisor - conseil de taille + ajout panier sur demande explicite."""
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -7,6 +8,9 @@ from mistralai.client import Mistral
 
 from app.core.mistral_trace import MistralCallTimeoutError, traced_mistral_call
 from app.services.size_extractor import _extract_json_from_text
+
+FIT_BLOCK_START = "---FIT---"
+FIT_BLOCK_END = "---END---"
 
 FIT_ADVISOR_SYSTEM = """Tu es un expert conseiller taille et style pour un service de mode. Tu compares les mesures d'un utilisateur au guide des tailles du vêtement, et tu donnes des conseils sur le vêtement.
 
@@ -20,26 +24,98 @@ RÈGLES TAILLE :
    - Préférence GRAND / ample / confortable / oversize → taille SUPÉRIEURE.
    - Préférence SERRÉ / ajusté / slim → taille INFÉRIEURE.
    - Sans préférence → taille supérieure pour le confort.
-4. Cite la taille recommandée clairement dans le champ "reply".
+4. Cite clairement la taille recommandée dans ton texte (en français naturel).
 
 RÈGLES CARACTÉRISTIQUES :
 5. Si description, catégorie, genre ou marque sont fournis, ajoute 1-2 phrases (coupe, style, entretien, associations).
-6. Le champ "reply" doit rester naturel et chaleureux, 3-5 phrases au total.
+6. Ton texte principal doit être en français courant, chaleureux, 3 à 5 phrases. INTERDIT dans cette partie : JSON, accolades { }, crochets de structure, guillemets autour de champs techniques.
 
 PANIER (très important) :
-7. Mets "add_to_cart": true UNIQUEMENT si l'utilisateur demande EXPLICITEMENT d'ajouter l'article au panier ou de l'acheter / le commander dans ce message.
-   Exemples qui déclenchent l'ajout : "ajoute au panier", "mets-le dans mon panier", "je le prends", "commande-le", "ajoute-le", "je veux l'acheter en taille M".
-8. Ne mets JAMAIS "add_to_cart": true pour une simple question ("quelle taille ?", "ça taille comment ?") sans intention d'achat claire.
-9. Si "add_to_cart" est true, "cart_size" DOIT être EXACTEMENT une des clés listées dans "Clés de taille valides" du message utilisateur (même casse, même orthographe).
-10. Si l'utilisateur indique une taille dans sa demande d'ajout (ex: "ajoute en L"), utilise cette taille si elle est une clé valide ; sinon la taille que tu recommandes selon les mesures.
-11. Si "add_to_cart" est false, mets "cart_size" à null.
+7. add_to_cart: true (dans le bloc technique ci-dessous) UNIQUEMENT si l'utilisateur demande EXPLICITEMENT d'ajouter l'article au panier ou de l'acheter / le commander dans ce message.
+   Exemples : "ajoute au panier", "mets-le dans mon panier", "je le prends", "commande-le", "ajoute-le", "je veux l'acheter en taille M".
+8. Jamais d'ajout pour une simple question ("quelle taille ?", "ça taille comment ?") sans intention d'achat claire.
+9. Si add_to_cart est true, cart_size DOIT être EXACTEMENT une des clés listées dans « Clés de taille valides » (même casse, même orthographe).
+10. Si l'utilisateur indique une taille dans sa demande d'ajout (ex: "ajoute en L"), utilise cette taille si c'est une clé valide ; sinon la taille que tu recommandes selon les mesures.
+11. Sinon add_to_cart: false et cart_size vide.
 
-FORMAT DE SORTIE :
-Tu réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte avant ou après :
-{"reply": "ton message utilisateur en français", "add_to_cart": false, "cart_size": null}
-ou si ajout demandé :
-{"reply": "...", "add_to_cart": true, "cart_size": "M"}
+FORMAT DE SORTIE (obligatoire, deux parties) :
+A) D'abord ton conseil en français (plusieurs phrases). Aucun JSON, aucune ligne qui commence par add_to_cart ou cart_size ici.
+
+B) Immédiatement après, sur des lignes séparées, ce bloc EXACT (sans markdown autour) :
+
+---FIT---
+add_to_cart: false
+cart_size:
+---END---
+
+Si l'utilisateur demande l'ajout au panier et une taille est valide, utilise par exemple :
+---FIT---
+add_to_cart: true
+cart_size: M
+---END---
+
+Remplace M par une clé valide. Si pas d'ajout : add_to_cart: false et laisse cart_size: vide après les deux-points.
 """
+
+
+def _strip_code_fences(text: str) -> str:
+    t = text.strip()
+    if t.startswith("```"):
+        t = re.sub(r"^```(?:json)?\s*", "", t, flags=re.IGNORECASE)
+        t = re.sub(r"\s*```\s*$", "", t)
+    return t.strip()
+
+
+def _parse_fit_delimiter_block(raw: str) -> tuple[str, bool, str | None] | None:
+    """Extrait (texte_utilisateur, add_to_cart, cart_size) si le bloc ---FIT--- est présent."""
+    if FIT_BLOCK_START not in raw or FIT_BLOCK_END not in raw:
+        return None
+    before, _, rest = raw.partition(FIT_BLOCK_START)
+    meta_section, _, _ = rest.partition(FIT_BLOCK_END)
+    main = before.strip()
+    add_to_cart = False
+    cart_size: str | None = None
+    for line in meta_section.strip().splitlines():
+        line = line.strip()
+        low = line.lower()
+        if low.startswith("add_to_cart:"):
+            val = line.split(":", 1)[1].strip().lower()
+            add_to_cart = val in ("true", "1", "yes", "oui")
+        elif low.startswith("cart_size:"):
+            v = line.split(":", 1)[1].strip()
+            if v and v.lower() not in ("null", "none", ""):
+                cart_size = v
+            else:
+                cart_size = None
+    if not main:
+        main = re.sub(
+            r"---FIT---[\s\S]*?---END---",
+            "",
+            raw,
+            flags=re.DOTALL,
+        ).strip()
+    if not main:
+        return None
+    return main, add_to_cart, cart_size
+
+
+def _parse_json_fit_legacy(raw: str) -> tuple[str, bool, str | None] | None:
+    parsed = _extract_json_from_text(raw)
+    if not parsed or not isinstance(parsed, dict):
+        return None
+    reply = (parsed.get("reply") or "").strip()
+    if not reply:
+        return None
+    # Évite d'afficher du JSON si le modèle a mis tout le paquet dans "reply"
+    if reply.startswith("{") and '"reply"' in reply:
+        inner = _extract_json_from_text(reply)
+        if inner and isinstance(inner, dict) and inner.get("reply"):
+            reply = str(inner["reply"]).strip()
+    add_to_cart = parsed.get("add_to_cart") is True
+    cart_size = parsed.get("cart_size")
+    if cart_size is not None:
+        cart_size = str(cart_size).strip() or None
+    return reply, add_to_cart, cart_size
 
 
 @dataclass
@@ -56,7 +132,7 @@ async def get_fit_advisor_result(
     user_measures: dict[str, float],
     size_guide: dict[str, Any] | None,
     api_key: str | None = None,
-    chat_model: str = "mistral-large-latest",
+    chat_model: str = "mistral-small-latest",
     user_message: str | None = None,
     garment_description: str | None = None,
     garment_category: str | None = None,
@@ -65,7 +141,8 @@ async def get_fit_advisor_result(
     conversation_history: list[dict[str, str]] | None = None,
 ) -> FitAdvisorResult:
     """
-    Conseil taille + détection d'une demande d'ajout au panier (JSON Mistral).
+    Conseil taille + détection d'une demande d'ajout au panier.
+    Sortie modèle : prose française puis bloc ---FIT--- / ---END--- ; repli JSON historique.
     """
     if not size_guide or not isinstance(size_guide, dict):
         return FitAdvisorResult(
@@ -142,7 +219,11 @@ Clés de taille valides pour cart_size (exactement l'une d'elles si add_to_cart 
     api_messages.append(
         {
             "role": "user",
-            "content": f"Message actuel de l'utilisateur : {user_pref}\n\nRéponds uniquement avec le JSON demandé (reply, add_to_cart, cart_size).",
+            "content": (
+                f"Message actuel de l'utilisateur : {user_pref}\n\n"
+                "Réponds avec ton conseil en français puis le bloc ---FIT--- ... ---END--- "
+                "comme indiqué dans les instructions système (add_to_cart et cart_size)."
+            ),
         }
     )
 
@@ -156,7 +237,7 @@ Clés de taille valides pour cart_size (exactement l'une d'elles si add_to_cart 
                     temperature=0.2,
                 ),
             )
-        raw_text = (res.choices[0].message.content or "").strip()
+        raw_text = _strip_code_fences(res.choices[0].message.content or "")
     except MistralCallTimeoutError:
         return FitAdvisorResult(
             reply="Délai dépassé pour le conseil taille. Réessayez dans un instant.",
@@ -164,18 +245,27 @@ Clés de taille valides pour cart_size (exactement l'une d'elles si add_to_cart 
     except Exception as e:
         return FitAdvisorResult(reply=f"Erreur lors du conseil : {str(e)}")
 
-    parsed = _extract_json_from_text(raw_text)
-    if not parsed or not isinstance(parsed, dict):
-        return FitAdvisorResult(reply=raw_text or "Réponse invalide du conseiller.")
+    parsed_tuple: tuple[str, bool, str | None] | None = _parse_fit_delimiter_block(
+        raw_text
+    )
+    if parsed_tuple is None:
+        legacy = _parse_json_fit_legacy(raw_text)
+        if legacy is not None:
+            parsed_tuple = legacy
+    if parsed_tuple is None:
+        stripped = raw_text.strip()
+        # Texte naturel sans bloc technique : on l’affiche tel quel (pas d’ajout panier auto)
+        if stripped and not stripped.startswith("{"):
+            return FitAdvisorResult(reply=stripped)
+        reply_fallback = stripped
+        if reply_fallback.startswith("{"):
+            reply_fallback = (
+                "Je n’ai pas pu formater la réponse correctement. "
+                "Reformulez votre question ou réessayez dans un instant."
+            )
+        return FitAdvisorResult(reply=reply_fallback or "Réponse invalide du conseiller.")
 
-    reply = (parsed.get("reply") or "").strip()
-    if not reply:
-        reply = raw_text
-
-    add_to_cart = parsed.get("add_to_cart") is True
-    cart_size = parsed.get("cart_size")
-    if cart_size is not None:
-        cart_size = str(cart_size).strip() or None
+    reply, add_to_cart, cart_size = parsed_tuple
 
     if add_to_cart:
         if not cart_size or cart_size not in size_guide:
@@ -200,7 +290,7 @@ async def get_fit_recommendation(
     user_measures: dict[str, float],
     size_guide: dict[str, Any] | None,
     api_key: str | None = None,
-    chat_model: str = "mistral-large-latest",
+    chat_model: str = "mistral-small-latest",
     user_message: str | None = None,
     garment_description: str | None = None,
     garment_category: str | None = None,

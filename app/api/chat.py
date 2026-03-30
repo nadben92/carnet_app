@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.mistral_api_errors import mistral_exception_to_user_response
 from app.core.mistral_trace import MistralCallTimeoutError, traced_mistral_call
 from app.database import get_db
 from app.models.garment import Garment
@@ -22,17 +23,14 @@ from app.services.retrieval import get_relevant_garments
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-SYSTEM_PROMPT_BASE = """Tu es un Personal Shopper bienveillant et expert. Tu conseilles des clients en leur proposant des vêtements de notre catalogue.
+SYSTEM_PROMPT_BASE = """Tu es un conseiller mode : réponses COURTES (quelques phrases, pas de longues introductions ni pavés).
 
-STYLE : Réponds de manière naturelle et conversationnelle, comme un vendeur attentionné. Pas de listes à puces rigides, pas de formules trop formelles. Sois chaleureux et précis.
-
-ARTICLES : Propose plusieurs articles quand c'est pertinent (alternatives, tenue complète, plusieurs occasions). Cite toujours le nom exact de chaque article tel qu'indiqué dans le contexte. Explique en quelques mots pourquoi chaque pièce convient.
-
-RÈGLE : Ne cite QUE les articles que tu recommandes. Si un article ne convient pas, ne le mentionne pas.
-
-ADAPTATION : Si la demande couvre plusieurs besoins (ex: randonnée + dîner), recommande au moins un article par situation. Évite les accessoires sauf si c'est l'objet principal.
-
-Si rien ne convient vraiment dans le catalogue, dis-le avec honnêteté, sans citer d'articles.
+Règles :
+- Recommande seulement des articles listés dans « Articles du catalogue » ci-dessous.
+- Pour chaque article choisi, recopie son nom COMPLET EXACTEMENT comme dans la liste dans ton texte (sinon la fiche ne s’affichera pas côté client). Pas de version abrégée ni de reformulation du titre.
+- Une ligne d’argument par article suffit (pourquoi ça colle à la demande).
+- Pas de politesses répétées, pas de résumé de la question, pas de liste numérotée longue.
+- Si le catalogue ne convient pas, dis-le en une phrase, sans citer d’article.
 
 """
 
@@ -136,6 +134,22 @@ def _build_user_measures(profile: UserProfile | None) -> dict[str, float]:
     }
 
 
+def _garment_to_source_dict(g: dict) -> dict:
+    """Payload « source » pour le front (grille + fiches)."""
+    return {
+        "id": g.get("id"),
+        "name": g["name"],
+        "brand": g["brand"],
+        "category": g["category"],
+        "gender": g.get("gender"),
+        "description": g.get("description") or "",
+        "price": g.get("price"),
+        "stock": g.get("stock"),
+        "image_url": g.get("image_url"),
+        "size_guide": g.get("size_guide"),
+    }
+
+
 def _build_context(garments: list[dict]) -> str:
     """Construit le contexte à injecter dans le prompt."""
     if not garments:
@@ -221,6 +235,9 @@ async def chat(
             detail="L'API Mistral (embeddings) a mis trop longtemps à répondre.",
         ) from None
     except Exception as e:
+        mapped = mistral_exception_to_user_response(e)
+        if mapped:
+            raise HTTPException(status_code=mapped[0], detail=mapped[1]) from e
         raise HTTPException(
             status_code=503,
             detail=f"Erreur lors de la recherche : {str(e)}",
@@ -246,7 +263,8 @@ async def chat(
                         {"role": "system", "content": system_content},
                         {"role": "user", "content": body.message},
                     ],
-                    temperature=0.3,
+                    temperature=0.25,
+                    max_tokens=settings.mistral_rag_max_tokens,
                 ),
             )
         reply = res.choices[0].message.content or ""
@@ -256,30 +274,21 @@ async def chat(
             detail="L'API Mistral (chat) a mis trop longtemps à répondre.",
         ) from None
     except Exception as e:
+        mapped = mistral_exception_to_user_response(e)
+        if mapped:
+            raise HTTPException(status_code=mapped[0], detail=mapped[1]) from e
         raise HTTPException(
             status_code=503,
             detail=f"Erreur API Mistral : {str(e)}",
         ) from e
 
-    # 5. Filtrer les sources : ne garder que les articles mentionnés dans la réponse (données complètes pour la fiche)
+    # 5. Grille = uniquement les articles dont le nom exact apparaît dans la réponse du modèle
     reply_lower = reply.lower()
-    sources = []
+    sources: list[dict] = []
     for g in garments:
         name = g.get("name", "")
-        # Inclure uniquement si le nom du produit apparaît dans la réponse
         if name and name.lower() in reply_lower:
-            sources.append({
-                "id": g.get("id"),
-                "name": g["name"],
-                "brand": g["brand"],
-                "category": g["category"],
-                "gender": g.get("gender"),
-                "description": g.get("description") or "",
-                "price": g.get("price"),
-                "stock": g.get("stock"),
-                "image_url": g.get("image_url"),
-                "size_guide": g.get("size_guide"),
-            })
+            sources.append(_garment_to_source_dict(g))
 
     return ChatResponse(reply=reply, sources=sources)
 

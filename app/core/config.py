@@ -20,14 +20,28 @@ class Settings(BaseSettings):
     # API Mistral
     mistral_api_key: Optional[str] = Field(default=None, description="Clé API Mistral AI")
     mistral_chat_model: str = Field(
-        default="mistral-large-latest",
-        description="Modèle Mistral pour le chat texte (conseiller, RAG, conseil taille)",
+        default="mistral-small-latest",
+        description="Modèle Mistral pour le chat, RAG, conseil taille et vision (extraction guide tailles)",
+    )
+    mistral_embed_model: str = Field(
+        default="mistral-embed",
+        description="Modèle d'embeddings Mistral (RAG, recherche, seed)",
+    )
+    mistral_transcription_model: str = Field(
+        default="voxtral-small-latest",
+        description="Modèle Mistral pour la transcription audio (Voxtral Small)",
     )
     mistral_http_timeout_seconds: float = Field(
         default=120.0,
         ge=5.0,
         le=600.0,
         description="Timeout asyncio pour chaque appel API Mistral (chat, embed, etc.)",
+    )
+    mistral_rag_max_tokens: int = Field(
+        default=480,
+        ge=64,
+        le=4096,
+        description="Longueur max (tokens) de la réponse du chat RAG / conseiller",
     )
 
     # Auth JWT
