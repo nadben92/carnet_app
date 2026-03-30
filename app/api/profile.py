@@ -13,6 +13,17 @@ from app.models.user_profile import UserProfile
 router = APIRouter(prefix="/profile", tags=["profile"])
 
 
+def _measurements_complete_row(p: UserProfile | None) -> bool:
+    """True si les trois tours (cm) sont renseignés — base du conseil taille / style."""
+    if not p:
+        return False
+    return (
+        p.chest_circ is not None
+        and p.waist_circ is not None
+        and p.hip_circ is not None
+    )
+
+
 class ProfileResponse(BaseModel):
     """Schéma de réponse du profil."""
 
@@ -29,6 +40,10 @@ class ProfileResponse(BaseModel):
     hip_circ: float | None = None
     arm_length: float | None = None
     inside_leg: float | None = None
+    measurements_complete: bool = Field(
+        default=False,
+        description="Poitrine, taille et hanches (cm) renseignés — conseils personnalisés fiables",
+    )
 
 
 class ProfileUpdate(BaseModel):
@@ -52,7 +67,7 @@ class ProfileUpdate(BaseModel):
 def _profile_to_response(p: UserProfile | None) -> ProfileResponse:
     """Convertit UserProfile en ProfileResponse."""
     if not p:
-        return ProfileResponse()
+        return ProfileResponse(measurements_complete=False)
     return ProfileResponse(
         first_name=p.first_name,
         height_cm=p.height_cm,
@@ -67,6 +82,7 @@ def _profile_to_response(p: UserProfile | None) -> ProfileResponse:
         hip_circ=p.hip_circ,
         arm_length=p.arm_length,
         inside_leg=p.inside_leg,
+        measurements_complete=_measurements_complete_row(p),
     )
 
 

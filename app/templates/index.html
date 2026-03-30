@@ -71,6 +71,30 @@
     </div>
   </nav>
 
+  <!-- Modale bienvenue : incitation forte aux mensurations (première connexion) -->
+  <div id="measurements-welcome-modal" class="fixed inset-0 z-[105] hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onclick="if(event.target===this) closeMeasurementsWelcomeModal()" role="dialog" aria-labelledby="measurements-welcome-title" aria-modal="true">
+    <div class="bg-white rounded-lg border-2 border-amber-200 shadow-card max-w-md w-full overflow-hidden" onclick="event.stopPropagation()">
+      <div class="bg-gradient-to-br from-amber-50 to-white px-6 pt-6 pb-4 border-b border-amber-100">
+        <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+          <i data-lucide="ruler" class="w-6 h-6 text-amber-800"></i>
+        </div>
+        <h2 id="measurements-welcome-title" class="text-xl font-display font-semibold text-gray-900">Personnalisez vos conseils</h2>
+        <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+          Sans vos <strong class="text-gray-800">mensurations</strong> (tour de poitrine, taille et hanches en cm), le conseiller ne peut pas vous recommander une taille fiable ni adapter les suggestions à votre morphologie.
+        </p>
+        <p class="text-xs text-amber-900/80 mt-3 font-medium">Deux minutes suffisent — ouvrez votre profil et remplissez la section « Mesures Fit Expert ».</p>
+      </div>
+      <div class="p-6 flex flex-col sm:flex-row gap-3">
+        <button type="button" id="measurements-welcome-cta" class="flex-1 py-3 px-4 bg-bottle hover:bg-accent-dark text-white font-medium rounded-sm transition-colors text-sm">
+          Renseigner mes mensurations
+        </button>
+        <button type="button" id="measurements-welcome-later" class="flex-1 py-3 px-4 rounded-sm border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium text-sm">
+          Plus tard
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Auth (Connexion / Inscription) -->
   <div id="auth-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onclick="if(event.target===this) closeAuthModal()">
     <div class="bg-white rounded-lg border border-gray-200 shadow-card max-w-md w-full overflow-hidden" onclick="event.stopPropagation()">
@@ -197,8 +221,12 @@
               placeholder="M, 38, 32">
           </div>
         </div>
-        <div class="border-t border-gray-100 pt-4">
-          <p class="text-xs font-medium text-bottle mb-3">Mesures Fit Expert (cm)</p>
+        <div id="profile-measures-section" class="border-t border-gray-100 pt-4 rounded-sm scroll-mt-4 ring-offset-2 transition-shadow">
+          <p class="text-xs font-medium text-bottle mb-1 flex items-center gap-2">
+            <i data-lucide="ruler" class="w-3.5 h-3.5"></i>
+            Mesures Fit Expert (cm)
+          </p>
+          <p class="text-[11px] text-amber-800/90 bg-amber-50 border border-amber-100 rounded-sm px-2 py-1.5 mb-3">Indispensable pour le conseil taille et des recommandations sur mesure.</p>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Poitrine</label>
@@ -259,6 +287,28 @@
   </div>
 
   <main class="pt-24 pb-12 px-6 max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-white to-bottle/5">
+    <!-- Rappel visuel : profil sans mensurations complètes -->
+    <div id="measurements-banner" class="hidden mb-6 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-50/80 px-4 py-3 sm:px-5 sm:py-4 shadow-sm" role="status">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex gap-3 min-w-0">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-amber-800"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="font-medium text-amber-950 text-sm">Complétez vos mensurations</p>
+            <p class="text-xs sm:text-sm text-amber-900/80 mt-0.5">Le conseiller style et le conseil taille s’appuient sur vos tours de poitrine, taille et hanches — sans eux, les réponses restent génériques.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button type="button" id="measurements-banner-cta" class="px-4 py-2 rounded-sm bg-bottle hover:bg-accent-dark text-white text-sm font-medium transition-colors whitespace-nowrap">
+            Ouvrir mon profil
+          </button>
+          <button type="button" id="measurements-banner-hide-session" class="text-xs text-amber-800/70 hover:text-amber-950 underline px-2" title="Réaffiche le bandeau à la prochaine visite">
+            Masquer aujourd’hui
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Section principale (2/3) -->
       <div class="lg:col-span-2 space-y-8">
@@ -315,6 +365,9 @@
                 Conseiller Style
               </h2>
               <p class="text-sm text-gray-600 mt-1">Conseils personnalisés basés sur notre catalogue</p>
+              <p id="chat-measurements-hint" class="hidden mt-2 text-xs text-amber-900 bg-amber-50 border border-amber-100 rounded-sm px-2.5 py-2 leading-snug">
+                <span class="font-medium">Astuce :</span> renseignez vos mensurations dans le profil pour des conseils vraiment adaptés à votre morphologie.
+              </p>
             </div>
 
             <div id="chat-messages" class="h-80 overflow-y-auto p-4 space-y-4 bg-white">
@@ -404,6 +457,81 @@
     function getAuthHeaders() {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       return token ? { 'Authorization': `Bearer ${token}` } : {};
+    }
+
+    const LS_MEAS_WELCOME_DISMISS = 'carnet_measurements_welcome_dismissed';
+    const SS_BANNER_HIDE = 'carnet_measurements_banner_session_hidden';
+    let profileMeasurementsComplete = true;
+
+    function openMeasurementsWelcomeModal() {
+      const el = document.getElementById('measurements-welcome-modal');
+      if (!el) return;
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      lucide.createIcons();
+    }
+
+    function closeMeasurementsWelcomeModal() {
+      const el = document.getElementById('measurements-welcome-modal');
+      if (!el) return;
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+      const am = document.getElementById('auth-modal');
+      const pm = document.getElementById('profile-modal');
+      const cm = document.getElementById('cart-modal');
+      const gm = document.getElementById('garment-modal');
+      const adm = document.getElementById('add-to-cart-modal');
+      if (!am.classList.contains('flex') && !pm.classList.contains('flex') && !cm.classList.contains('flex') && !gm.classList.contains('flex') && !adm.classList.contains('flex')) {
+        document.body.style.overflow = '';
+      }
+    }
+
+    async function refreshMeasurementsUI(opts = {}) {
+      const { openWelcomeAfterFetch = false } = opts;
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      const banner = document.getElementById('measurements-banner');
+      const hint = document.getElementById('chat-measurements-hint');
+      if (!token) {
+        profileMeasurementsComplete = true;
+        banner?.classList.add('hidden');
+        hint?.classList.add('hidden');
+        closeMeasurementsWelcomeModal();
+        updateMeasurementsBadgeOnNav();
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/profile`, { headers: getAuthHeaders() });
+        if (!res.ok) return;
+        const p = await res.json();
+        profileMeasurementsComplete = !!p.measurements_complete;
+        const sessionHide = sessionStorage.getItem(SS_BANNER_HIDE) === '1';
+        if (profileMeasurementsComplete) {
+          banner?.classList.add('hidden');
+          sessionStorage.removeItem(SS_BANNER_HIDE);
+          closeMeasurementsWelcomeModal();
+        } else {
+          if (!sessionHide) banner?.classList.remove('hidden');
+          if (openWelcomeAfterFetch && !localStorage.getItem(LS_MEAS_WELCOME_DISMISS)) {
+            openMeasurementsWelcomeModal();
+          }
+        }
+        if (hint) {
+          if (!profileMeasurementsComplete) hint.classList.remove('hidden');
+          else hint.classList.add('hidden');
+        }
+        updateMeasurementsBadgeOnNav();
+      } catch (_) {}
+    }
+
+    function updateMeasurementsBadgeOnNav() {
+      const dot = document.getElementById('profile-measurements-dot');
+      if (!dot) return;
+      if (localStorage.getItem(AUTH_TOKEN_KEY) && !profileMeasurementsComplete) {
+        dot.classList.remove('hidden');
+      } else {
+        dot.classList.add('hidden');
+      }
     }
 
     function apiErrorDetail(body) {
@@ -697,6 +825,10 @@
     function clearAuth() {
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(AUTH_USER_KEY);
+      profileMeasurementsComplete = true;
+      document.getElementById('measurements-banner')?.classList.add('hidden');
+      document.getElementById('chat-measurements-hint')?.classList.add('hidden');
+      closeMeasurementsWelcomeModal();
       updateAuthUI(null);
       hideCartBadge();
     }
@@ -706,7 +838,8 @@
       if (user) {
         section.innerHTML = `
           <div class="flex items-center gap-2">
-            <button type="button" id="auth-profile-btn" class="flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium" title="Mon profil">
+            <button type="button" id="auth-profile-btn" class="relative flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium" title="Mon profil — complétez vos mensurations si le point orange est visible">
+              <span id="profile-measurements-dot" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-bottle" aria-label="Mensurations à compléter"></span>
               <i data-lucide="user" class="w-4 h-4"></i>
               <span>${escapeHtml(user.email)}</span>
             </button>
@@ -717,6 +850,7 @@
         `;
         document.getElementById('auth-profile-btn').onclick = openProfileModal;
         document.getElementById('auth-logout-btn').onclick = () => { clearAuth(); closeAuthModal(); closeProfileModal(); closeCartModal(); closeAddToCartModal(); };
+        updateMeasurementsBadgeOnNav();
       } else {
         section.innerHTML = `
           <button type="button" id="auth-btn" class="flex items-center gap-2 px-4 py-2 rounded-sm border border-white/50 text-white hover:bg-white/10 transition-colors text-sm font-medium">
@@ -741,6 +875,7 @@
         if (res.ok) {
           const user = await res.json();
           setAuth(token, user);
+          await refreshMeasurementsUI({ openWelcomeAfterFetch: false });
         } else {
           clearAuth();
         }
@@ -749,6 +884,33 @@
       }
     }
     checkAuth();
+
+    document.getElementById('measurements-welcome-cta')?.addEventListener('click', () => {
+      closeMeasurementsWelcomeModal();
+      openProfileModal();
+      setTimeout(() => {
+        const sec = document.getElementById('profile-measures-section');
+        sec?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (sec) {
+          sec.classList.add('ring-2', 'ring-amber-400');
+          setTimeout(() => sec.classList.remove('ring-2', 'ring-amber-400'), 2500);
+        }
+      }, 350);
+    });
+    document.getElementById('measurements-welcome-later')?.addEventListener('click', () => {
+      localStorage.setItem(LS_MEAS_WELCOME_DISMISS, '1');
+      closeMeasurementsWelcomeModal();
+    });
+    document.getElementById('measurements-banner-cta')?.addEventListener('click', () => {
+      openProfileModal();
+      setTimeout(() => {
+        document.getElementById('profile-measures-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    });
+    document.getElementById('measurements-banner-hide-session')?.addEventListener('click', () => {
+      sessionStorage.setItem(SS_BANNER_HIDE, '1');
+      document.getElementById('measurements-banner')?.classList.add('hidden');
+    });
 
     let authMode = 'login';
     const authModal = document.getElementById('auth-modal');
@@ -823,6 +985,7 @@
         setAuth(data.access_token, data.user);
         closeAuthModal();
         authForm.reset();
+        await refreshMeasurementsUI({ openWelcomeAfterFetch: true });
       } catch (err) {
         authError.textContent = err.message || 'Erreur';
         authError.classList.remove('hidden');
@@ -833,7 +996,9 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (authModal.classList.contains('flex')) closeAuthModal();
+        const mw = document.getElementById('measurements-welcome-modal');
+        if (mw && mw.classList.contains('flex')) closeMeasurementsWelcomeModal();
+        else if (authModal.classList.contains('flex')) closeAuthModal();
         else if (profileModal.classList.contains('flex')) closeProfileModal();
         else if (cartModal.classList.contains('flex')) closeCartModal();
         else if (addToCartModal.classList.contains('flex')) closeAddToCartModal();
@@ -910,6 +1075,7 @@
           body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error((await res.json()).detail || 'Erreur');
+        await refreshMeasurementsUI({ openWelcomeAfterFetch: false });
         closeProfileModal();
       } catch (err) {
         document.getElementById('profile-error').textContent = err.message || 'Erreur';
