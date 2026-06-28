@@ -1,161 +1,182 @@
-# Personal Shopper API
+# Carnet — AI-Native Fashion Commerce
 
-API FastAPI de **personal shopper** avec recherche sémantique (RAG), chat agentique et outils Mistral (embeddings, vision, audio Voxtral). Interface web sur **`/`**.
+**Carnet** is a reference implementation of what an online clothing store should look like when AI is woven into every layer of the experience — not as a chatbot bolt-on, but as the core product.
+
+Instead of browsing endless grids and guessing sizes, shoppers describe what they want in natural language, speak their intent, and receive grounded recommendations from a catalog the system actually understands. Fit advice is personalized to body measurements. Size guides can be extracted from images. The entire flow — discovery, consultation, sizing, and cart — is designed around human conversation augmented by deterministic, traceable AI tooling.
+
+This project demonstrates that vision end-to-end: a production-ready FastAPI backend, a web interface served at `/`, and a full Mistral AI stack (embeddings, chat, vision, voice).
+
+---
+
+## What makes it AI-first
+
+| Capability | How it works |
+|------------|--------------|
+| **Semantic discovery** | Garment descriptions are embedded with **Mistral Embed** and stored in **PostgreSQL + pgvector**. The stylist chat retrieves candidates by cosine similarity, then responds citing **exact catalog names** — the UI only surfaces products genuinely referenced in the answer. |
+| **Profile-aware styling** | Logged-in users inject measurements, preferred sizes, style notes, and color avoidances into every chat turn. Recommendations adapt to the person, not just the query. |
+| **Voice input** | Browser microphone capture is transcribed via **Voxtral** (`POST /audio/transcribe`), enabling hands-free shopping queries. |
+| **Vision-powered sizing** | Upload a size-chart image or PDF and the system extracts structured size guides (`POST /size-extract`) using Mistral vision. |
+| **Fit advisor agent** | A dedicated sizing dialogue (`POST /chat/size-advice`) compares user measurements against garment size guides, recommends a size, and can add the item to cart on explicit request. |
+| **Deterministic orchestration** | Agentic flows are implemented in application code — no opaque orchestration framework. Every Mistral call is traced, timeout-bounded, and mapped to clear HTTP responses. |
+
+---
 
 ## Architecture
 
-- **RAG** : les descriptions de vêtements sont vectorisées avec **Mistral Embed** et stockées dans **PostgreSQL + pgvector**. Le chat (`POST /chat`) récupère des candidats par similarité, le modèle répond en citant les **noms exacts** du catalogue ; la grille n’affiche que les articles **effectivement nommés** dans le texte de réponse.
-- **Flux agentique** : le endpoint `/chat` injecte le contexte catalogue et le **profil** (mensurations, préférences). Modèle texte/vision par défaut : **`mistral-small-latest`** (`MISTRAL_CHAT_MODEL`). Embeddings : **`mistral-embed`** (`MISTRAL_EMBED_MODEL`). Transcription : **`voxtral-small-latest`** (`MISTRAL_TRANSCRIPTION_MODEL`).
-- **Outils** : transcription (`/audio/transcribe`), extraction de guide tailles (`/size-extract`), conseil taille (`/chat/size-advice`), recherche (`/search`), panier, auth JWT.
+```
+Shopper (web UI)
+      │
+      ▼
+FastAPI  ──►  JWT auth · profile · cart
+      │
+      ├── RAG retrieval (pgvector + Mistral Embed)
+      ├── Chat / fit advisor (mistral-small-latest)
+      ├── Size extraction (vision)
+      └── Transcription (voxtral-small-latest)
+      │
+      ▼
+PostgreSQL  (catalog, embeddings, users, cart)
+```
 
-## Stack technique
+**Default models** (overridable via `.env`):
 
-| Composant | Rôle |
-|-----------|------|
-| **Mistral AI** | Embeddings, chat, vision, transcription (Voxtral Small) |
-| **FastAPI** | API HTTP async, validation Pydantic |
-| **PostgreSQL + pgvector** | Données + vecteurs |
-| **Alembic** | Migrations |
-| **Docker Compose** | Services `db` + `app`, réseau `internal`, volumes, healthchecks |
+- Chat, RAG, fit advisor, vision: `mistral-small-latest`
+- Embeddings: `mistral-embed`
+- Transcription: `voxtral-small-latest`
 
-## Lancement (Docker) — procédure actuelle
+---
 
-### Prérequis
+## Tech stack
 
-- [Docker](https://docs.docker.com/get-docker/) et Docker Compose v2  
-- Fichier **`.env`** à la racine (voir `.env.example`)
+| Layer | Choice |
+|-------|--------|
+| AI | [Mistral AI](https://mistral.ai) — embeddings, chat, vision, Voxtral |
+| API | FastAPI, Pydantic v2, async SQLAlchemy 2.0 |
+| Data | PostgreSQL + pgvector |
+| Migrations | Alembic |
+| Runtime | Docker Compose (multi-stage image, healthchecks) |
 
-### 1. Configuration
+---
+
+## Quick start
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2
+- A `.env` file at the project root (see `.env.example`)
+
+### 1. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Renseigner au minimum :
+Required:
 
-- **`MISTRAL_API_KEY`** — obligatoire pour RAG, seed, chat, transcription, etc.
-- Les variables **`DATABASE_*`** sont surchargées par Compose pour le service `app` (`DATABASE_HOST=db`). Gardez-les cohérentes avec le service **`db`** (utilisateur, mot de passe, nom de base).  
-- Optionnel : **`DATABASE_URL`** (prioritaire sur les champs `DATABASE_*` si défini) — sous Docker, l’hôte Postgres doit être **`db`**, pas `localhost`.
+- **`MISTRAL_API_KEY`** — powers RAG, chat, seeding, transcription, and vision
+- **`DATABASE_*`** — overridden by Compose for the `app` service (`DATABASE_HOST=db`). Keep credentials aligned with the `db` service.
 
-Autres variables utiles : `MISTRAL_CHAT_MODEL`, `MISTRAL_EMBED_MODEL`, `MISTRAL_TRANSCRIPTION_MODEL`, `MISTRAL_HTTP_TIMEOUT_SECONDS`, `MISTRAL_RAG_MAX_TOKENS`, `JWT_SECRET`, **`APP_PORT`** (voir ci-dessous).
+Optional: `MISTRAL_CHAT_MODEL`, `MISTRAL_EMBED_MODEL`, `MISTRAL_TRANSCRIPTION_MODEL`, `MISTRAL_HTTP_TIMEOUT_SECONDS`, `MISTRAL_RAG_MAX_TOKENS`, `JWT_SECRET`, `APP_PORT` (default **8000**).
 
-### 2. Démarrer la stack
+### 2. Launch
 
 ```bash
 docker compose up --build
 ```
 
-- **API + UI** : `http://localhost:<port>` avec `<port>` = valeur de **`APP_PORT`** dans `.env` (défaut **8000**), ex. [http://localhost:8000](http://localhost:8000)  
-- Au premier démarrage du conteneur **`app`**, le script **`scripts/start.sh`** enchaîne :
-  1. `alembic upgrade head`
-  2. `python -m scripts.seed_db` (idempotent)
-  3. `uvicorn app.main:app --host 0.0.0.0 --port 8000`
+Open **http://localhost:8000** (or your `APP_PORT`). On first boot, `scripts/start.sh` runs migrations, seeds the catalog, and starts Uvicorn.
 
-**Seed** : si la table `garments` est **vide** → import de `app/data/catalog.json` (embeddings Mistral + images DuckDuckGo scorées si pas d’`image_url` dans le JSON). Si des lignes existent mais **`embedding` est NULL** → recalcul des embeddings uniquement. Si tout est à jour → message `Database already seeded. Skipping...`.
+**Seeding behavior:**
 
-### 3. Variantes utiles
+- Empty `garments` table → imports `app/data/catalog.json` with Mistral embeddings (and DuckDuckGo-scored images when `image_url` is missing)
+- Rows with `NULL` embeddings → recomputes embeddings only
+- Already seeded → skips with `Database already seeded. Skipping...`
 
-| Besoin | Commande |
-|--------|----------|
-| Premier build sans cache | `docker compose build --no-cache app` puis `docker compose up` |
-| Tourner en arrière-plan | `docker compose up --build -d` |
-| Arrêter | `docker compose down` |
-| **Port 8000 déjà utilisé** | Dans `.env` : `APP_PORT=8001` puis `docker compose up --build` |
-| Dev : code monté + reload | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build` |
-| Seed manuel | `docker compose run --rm app python -m scripts.seed_db` |
+### 3. Common commands
 
-### 4. Repartir sur un catalogue / base neuve
+| Task | Command |
+|------|---------|
+| Clean rebuild | `docker compose build --no-cache app && docker compose up` |
+| Run detached | `docker compose up --build -d` |
+| Stop | `docker compose down` |
+| Port conflict | Set `APP_PORT=8001` in `.env`, then `docker compose up --build` |
+| Dev (hot reload) | `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build` |
+| Manual seed | `docker compose run --rm app python -m scripts.seed_db` |
 
-Le seed **ne duplique pas** les vêtements si la table est déjà remplie. Pour **tout réimporter** (nouveau `catalog.json`, nouvelles images, etc.) :
+### 4. Reset catalog / database
+
+To fully re-import (new catalog, fresh embeddings):
 
 ```bash
 docker compose down -v
 docker compose up --build
 ```
 
-`-v` supprime le volume Postgres (**données effacées**).
-
-Sans tout détruire, vous pouvez vider uniquement les articles (à exécuter selon votre user/base) :
+`-v` destroys the Postgres volume. To truncate garments only:
 
 ```bash
 docker compose exec db psql -U postgres -d personal_shopper -c "TRUNCATE garments RESTART IDENTITY CASCADE;"
 docker compose restart app
 ```
 
-(adaptez `personal_shopper` / utilisateur si besoin)
+---
 
-## Tutoriel d'utilisation
+## Using Carnet
 
-L’interface s’appelle **Carnet** ; elle est servie sur la racine du serveur (`/`). La doc interactive OpenAPI est sur [`/docs`](http://localhost:8000/docs) (adapter le port si `APP_PORT` ≠ 8000).
+The web UI is served at `/`. Interactive API docs: [`/docs`](http://localhost:8000/docs).
 
-### 1. Première visite
+### Browse without an account
 
-1. Ouvrez l’URL de l’app (ex. `http://localhost:8000`).
-2. Le bandeau de statut en haut à droite indique si l’API répond (`GET /health`).
+Anyone can chat with the AI stylist — RAG runs against the full catalog. Without login, there is no persistent profile or cart.
 
-Vous pouvez **poser une question au chat sans compte** : le conseiller utilise le catalogue RAG. En revanche, **sans connexion** vous n’avez pas de profil (mensurations, couleurs évitées, etc.) et pas de **panier** persistant.
+### Create an account
 
-### 2. Compte (connexion / inscription)
+Sign up with email and password (8+ characters). A JWT is stored in `localStorage` and attached to subsequent requests.
 
-1. Cliquez sur **Connexion** dans la barre du haut.
-2. Onglet **Inscription** : email + mot de passe (**minimum 8 caractères**).
-3. Après inscription ou connexion, un **JWT** est stocké dans le navigateur (`localStorage`) ; les requêtes suivantes l’envoient automatiquement.
+### Complete your profile
 
-Pour vous déconnecter, utilisez l’action prévue dans l’UI (le token est alors retiré du stockage local).
+For reliable fit advice, enter **chest, waist, and hip measurements** (cm). A modal prompts new users; a banner reminds you until all three are filled. Optional fields — name, usual sizes, style preferences, colors to avoid — enrich chat context.
 
-### 3. Mensurations et profil
+### Chat with the stylist
 
-Pour des conseils plus fiables (chat morphologique, **conseil taille**), renseignez au minimum **tour de poitrine, tour de taille et tour de hanches** (cm) dans le profil.
+Describe what you need in plain language (e.g. *"I'm looking for a black office trouser"*). The model responds concisely and cites only in-catalog items. Product cards appear **only when the exact garment name appears in the response** — if a title is paraphrased, ask the stylist to repeat the catalog name.
 
-- Après la **première** connexion ou inscription, une **modale** peut proposer de compléter ces mesures ; vous pouvez aussi y accéder via **Profil**.
-- Tant que ces trois mesures ne sont pas remplies, un **bandeau** ou des **rappels** (chat, indicateur sur l’icône profil) peuvent vous le signaler.
+Gender and price filters above the grid apply to items from the latest reply. To filter at retrieval time, pass `gender`, `price_min`, and `price_max` in the `POST /chat` body.
 
-Dans le profil, vous pouvez aussi indiquer prénom, tailles habituelles, style, couleurs à éviter, etc. Ces informations sont injectées dans le prompt du chat lorsque vous êtes connecté.
+### Voice input
 
-### 4. Conseiller style (chat)
+Click the microphone next to the chat field (Chrome / Edge recommended). Audio is streamed to `POST /audio/transcribe`; the transcribed text fills the input for editing before send. Click again to stop recording.
 
-1. Saisissez votre demande en langage naturel (ex. « Je cherche un pantalon noir pour le bureau »).
-2. Le modèle répond de façon **courte** et ne doit citer que des articles **présents dans le catalogue**.
-3. **Important pour la grille** : seuls les vêtements dont le **nom complet exact** apparaît dans le texte de la réponse sont listés en fiches sous le chat (boutons « Articles cités »). Si le modèle reformule ou abrège un titre, la fiche peut ne pas s’afficher — reformulez ou demandez de recopier le nom tel que dans le catalogue.
+### Product detail, fit advice, cart
 
-Les **filtres** (genre, fourchette de prix) au-dessus de la grille s’appliquent **aux articles déjà proposés** par le dernier message du conseiller (filtrage côté interface). Pour forcer genre / prix dès la recherche vectorielle, utilisez l’API `POST /chat` avec le corps JSON `price_min`, `price_max`, `gender` (voir `/docs`).
+- Click a cited item or product card for details, images, and size guides.
+- **Fit advice** opens a dedicated dialogue; the agent can recommend a size and add to cart on explicit request (login required).
+- The bag icon manages cart items via `/cart` endpoints (login required).
 
-### 5. Voix (dictée)
+---
 
-À côté du champ de chat (et dans la fenêtre **conseil taille**), un bouton **micro** lance la capture audio (navigateurs type **Chrome / Edge** recommandés). L’audio est envoyé par morceaux à **`POST /audio/transcribe`** (Mistral / Voxtral) ; le texte transcrit remplit le champ — vous pouvez l’éditer puis envoyer comme un message classique. **Recliquer sur le micro** arrête l’enregistrement.
+## API overview
 
-### 6. Fiches article, conseil taille, panier
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health` | Liveness + database check |
+| `GET /search?q=...` | Raw semantic search (`gender`, `price_min`, `price_max` optional) |
+| `GET /search/garment?name=...` | Garment detail by name |
+| `POST /chat` | RAG stylist chat — optional `Authorization: Bearer <token>` |
+| `POST /chat/size-advice` | Fit advisor dialogue |
+| `POST /audio/transcribe` | Audio → text (Voxtral) |
+| `POST /size-extract` | Image/PDF → structured size guide |
 
-- En cliquant sur un article cité ou sur une carte produit, vous ouvrez le détail (image, infos, guide des tailles si disponible).
-- **Conseil taille** : dialogue dédié (`POST /chat/size-advice`) ; l’agent peut proposer une taille et, le cas échéant, **ajouter la ligne au panier** (compte requis).
-- **Panier** : icône sac en haut à droite. Ajout / mise à jour des quantités nécessite d’être **connecté** (`/cart`, `/cart/items`).
+Full schemas and examples: **`/docs`**.
 
-### 7. API sans l’interface web
+---
 
-| Besoin | Endpoint (résumé) |
-|--------|-------------------|
-| Santé | `GET /health` |
-| Recherche sémantique brute | `GET /search?q=...` (+ filtres optionnels `gender`, `price_min`, `price_max`) |
-| Détail par nom | `GET /search/garment?name=...` |
-| Chat RAG | `POST /chat` — header optionnel `Authorization: Bearer <token>` |
-| Transcription | `POST /audio/transcribe` (fichier audio) |
-| Guide tailles depuis une image PDF / visuel | `POST /size-extract` (fichier) |
+## Resilience
 
-Référence complète des schémas et exemples : **`/docs`**.
+| Topic | Detail |
+|-------|--------|
+| Timeouts | `MISTRAL_HTTP_TIMEOUT_SECONDS` via `traced_mistral_call`; API may return **504** |
+| Rate limits | Mistral **429** / capacity errors surface user-friendly messages; check [console.mistral.ai](https://console.mistral.ai) |
+| Database | `asyncpg` connect/command timeouts via `DATABASE_CONNECT_TIMEOUT_*` |
+| Health | Postgres `depends_on` + healthcheck; app exposes `GET /health` |
 
-## Fonctionnalités agentiques (rappel)
-
-Le flux reste **déterministe** dans le code (pas d’orchestrateur type LangGraph). Le profil JWT + `/profile` (dont **mensurations complètes** pour le conseil taille) enrichit le chat ; les outils HTTP peuvent être enchaînés côté client.
-
-## Résilience & erreurs Mistral
-
-| Sujet | Détail |
-|--------|--------|
-| Timeouts | `MISTRAL_HTTP_TIMEOUT_SECONDS`, `traced_mistral_call`, réponses **504** possibles |
-| **429 / capacité** (`service_tier_capacity_exceeded`, etc.) | Côté **Mistral** (quota, plan, saturation). Messages utilisateur adoucis dans l’API ; consulter [console.mistral.ai](https://console.mistral.ai) |
-| DB | Timeouts `asyncpg` via `DATABASE_CONNECT_TIMEOUT_*` |
-| Santé | `depends_on` + healthcheck Postgres ; healthcheck `GET /health` sur `app` |
-
-## Licence
-
-À définir.
